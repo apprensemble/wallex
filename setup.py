@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 setup(
     name='myblockscoutlib',
     packages=find_packages(include=['myblockscoutlib']),
-    version='0.2.2',
+    version='0.2.3',
     description='A simple wallet watcher via Blockscout and CMC',
     author='Me',
     install_requires=[],
