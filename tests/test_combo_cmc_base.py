@@ -1,4 +1,4 @@
-from myblockscoutlib import base,Cmc
+from myblockscoutlib import Cmc, base
 import json
 
 cmc_file = "res_cmc.json"
