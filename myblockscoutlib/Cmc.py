@@ -43,14 +43,22 @@ class Cmc:
     def parse_quotes_from_cmc(self,quotes):
         parsed_quotes = {}
         for d in quotes['data']:
-            cid = d['name']+d['symbol']
+            doublons = False
+            occurences = 1
+            symbol = d['symbol']
+            if symbol in parsed_quotes.keys():
+                doublons = True
+                occurences += parsed_quotes[symbol]['occurences']
+            cid = d['name']+ symbol
             id = d['id']
-            parsed_quotes[cid] = {
-            'symbol': d['symbol'],
-            'id': d['id'],
+            parsed_quotes[symbol] = {
+            'symbol': symbol,
+            'id': id,
             'cid': cid,
+            'doublons': doublons,
+            'occurences': occurences,
             'name': d['name'],
-            'price': float(d['quote']['USD']['price'])
+            'exchange_rate': float(d['quote']['USD']['price'])
             }
         return parsed_quotes
 
@@ -58,3 +66,23 @@ class Cmc:
         quotes = self.get_USD_quotes_from_cmc(regenerate)
         self.quotes = self.parse_quotes_from_cmc(quotes)
         return self.quotes
+
+    def separate_solo_and_doublons_quotes(self):
+        doublons = {}
+        simple = {}
+        ndoublons = 0
+        nsimple = 0
+        quotes = self.get_parsed_quotes()
+        for id in quotes.keys():
+            if quotes[id]['occurences'] > 1:
+                doublons[id] = quotes[id]
+                ndoublons += 1
+            else:
+                simple[id] = quotes[id]
+                nsimple += 1
+        self.simple = simple
+        self.doublons = doublons
+        self.nbr_simple = nsimple
+        self.nbr_doublons = doublons
+        print("nbr doublons: ",ndoublons,", nbr simple: ",nsimple)
+        return simple,doublons

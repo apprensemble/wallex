@@ -3,9 +3,11 @@ from myblockscoutlib import base
 def test_sum_tokens_usd_balances():
     entries = {
         '1': {
+            'symbol': '1',
             'usd_balance': 10
         },
         '2': {
+            'symbol': '2',
             'usd_balance': 15
         }
     }

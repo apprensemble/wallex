@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 setup(
     name='myblockscoutlib',
     packages=find_packages(include=['myblockscoutlib']),
-    version='0.1.1',
+    version='0.2.1',
     description='My first Python library',
     author='Me',
     install_requires=[],
