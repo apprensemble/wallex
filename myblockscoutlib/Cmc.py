@@ -12,6 +12,11 @@ class Cmc:
         fjson = json.loads(f.read())
         return fjson
 
+    def save_cmc_quotes_to_file(self):
+        f = open(self.CMC_FILE_NAME,'w')
+        json.dump(self.initial_response,f)
+
+
     def get_with_parameters(self,url,parameters,headers):
 
         session = Session()
@@ -28,6 +33,24 @@ class Cmc:
         parameters = {
             'start':'1',
             'limit':'5000',
+            'convert':'USD',
+            'sort':"volume_24h"
+        }
+        headers = {
+            'Accepts': 'application/json',
+            'X-CMC_PRO_API_KEY': self.X_CMC_PRO_API_KEY,
+        }
+        if regenerate:
+            fjson = self.get_with_parameters(url,parameters,headers)
+            self.initial_response = fjson
+        else:
+            fjson = self.load_cmc_quotes_from_file()
+        return fjson
+
+    def get_USD_quote_of_symbols_from_cmc(self,symbols,regenerate=True):
+        url = 'https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest'
+        parameters = {
+            'symbol': symbols,
             'convert':'USD'
         }
         headers = {
@@ -45,10 +68,15 @@ class Cmc:
         for d in quotes['data']:
             doublons = False
             occurences = 1
+            if hasattr(d,"keys"):
+                d = d
+            else:
+                d = quotes['data'][d][0]
             symbol = d['symbol']
             if symbol in parsed_quotes.keys():
                 doublons = True
                 occurences += parsed_quotes[symbol]['occurences']
+            exchange_rate = float(d['quote']['USD']['price'])
             cid = d['name']+ symbol
             id = d['id']
             parsed_quotes[symbol] = {
@@ -58,12 +86,27 @@ class Cmc:
             'doublons': doublons,
             'occurences': occurences,
             'name': d['name'],
-            'exchange_rate': float(d['quote']['USD']['price'])
+            'exchange_rate': exchange_rate
             }
         return parsed_quotes
 
+    def get_parsed_quotes_of_symbols_from_cmc(self,symbols,regenerate=True):
+        try:
+            quotes = self.get_USD_quote_of_symbols_from_cmc(symbols)
+            if quotes['status']['error_code'] > 0:
+                raise BaseException("erreur recuperation quotes",quotes)
+        except BaseException as be:
+            print(be)
+        self.quotes = self.parse_quotes_from_cmc(quotes)
+        return self.quotes
+
     def get_parsed_quotes(self,regenerate=False):
-        quotes = self.get_USD_quotes_from_cmc(regenerate)
+        try:
+            quotes = self.get_USD_quotes_from_cmc(regenerate)
+            if quotes['status']['error_code'] > 0:
+                raise BaseException("erreur recuperation quotes",quotes)
+        except BaseException as be:
+            print(be)
         self.quotes = self.parse_quotes_from_cmc(quotes)
         return self.quotes
 

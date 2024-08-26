@@ -1,7 +1,7 @@
 from requests import Session
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
 
-def get_token_balances_from_blockscout(account) -> dict:
+def get_tokens_balance_from_blockscout(account) -> dict:
   url_suffixe = "/addresses/"+account+"/token-balances"
   url = "https://base.blockscout.com/api/v2" + url_suffixe
   parameters = {
@@ -12,12 +12,14 @@ def get_token_balances_from_blockscout(account) -> dict:
   rjson =  get_with_parameters(url,parameters,headers)
   return parse_response_from_blockscout(rjson)
 
-def get_native_balances_from_blockscout(account) -> dict:
+def get_native_balance_from_blockscout(account) -> dict:
   entry = {
     'id': "ETH",
     'symbol': "ETH",
     'name': "Ethereum",
-    'native_balance': 0.0
+    'native_balance': 0.0,
+    'blockchain': "Base",
+    'type': "EVM"
   }
   url = "https://base.blockscout.com/api"
   parameters = {
@@ -59,35 +61,12 @@ def parse_response_from_blockscout(rjson):
         'name': entry['token']['name'],
         'symbol': entry['token']['symbol'],
         'contract_address': entry['token']['address'],
-        'native_balance': int(entry['value']),
+        'native_balance': native_balance,
         'usd_balance': usd_balance,
+        'blockchain': "Base",
+        'type': "EVM",
         'exchange_rate': float(entry['token']['exchange_rate'])
       }
       #print(entries[id]['symbol']," : ",entries[id]['usd_balance'])
     else: continue
-  return entries
-
-def sum_tokens_usd_balances(entries):
-  total: float = 0.0
-  for indice in entries:
-    print(entries[indice]['symbol']," ", entries[indice]['usd_balance'])
-    total += entries[indice]['usd_balance']
-  return total
-
-def update_exchange_rate_to_entry(entry,exhange_rate) -> dict:
-  old_usd_balance = 0.0
-  entry['exchange_rate'] = exhange_rate
-  new_usd_balance = round(entry['native_balance'] * entry['exchange_rate'],2)
-  if 'usd_balance' in entry.keys():
-    old_usd_balance = entry['usd_balance'] 
-  entry['usd_balance'] = new_usd_balance 
-  #print("usd balance updated from ",old_usd_balance," to ",new_usd_balance)
-  return entry
-
-def update_exchange_rate_via_parsed_quotes(entry,parsed_quotes) -> dict:
-  return update_exchange_rate_to_entry(entry,parsed_quotes[entry['symbol']]['exchange_rate'])
-
-def add_one_entry_to_entries(entry,entries):
-  new_entry_symbol = entry['symbol']
-  entries[new_entry_symbol] = entry
   return entries
