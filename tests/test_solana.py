@@ -11,7 +11,8 @@ solana_entries = {'PYTH':
                     'contract_address': '7mXnqYm4d3tyBNCEVbeKUj2yjf2kndPLTAtAYanduBpL'}, 
                 'DOGGO': 
                     {'id': 'DOGGO', 'symbol': 'DOGGO', 'name': 'DOGGO', 'native_balance': '226426.69691', 'blockchain': 'Solana', 'type': 'SVM', 
-                     'contract_address': '2YJSevxgvwruyWXb9kiuo66VRLTWyNDiJ3eaeiFT8kPC'}}
+                     'contract_address': '2YJSevxgvwruyWXb9kiuo66VRLTWyNDiJ3eaeiFT8kPC'},
+                     }
 
 sol_balance = {'id': 'SOL', 'symbol': 'SOL', 'name': 'Solana', 'native_balance': 0.281498155, 'blockchain': 'Solana', 'type': 'SVM'}
 
@@ -30,3 +31,7 @@ def test_sum_total_balance():
     removed_entries = mon_wallet.remove_tokens("pyth,sol")
     assert mon_wallet.sum_total_balance() < 1
     assert len(removed_entries.keys()) == 2
+
+def test_add_missing_symbols():
+    c.cmc.get_missing_main_symbols(c.svm_main_symbols)
+

@@ -6,9 +6,15 @@ class Cmc:
     def __init__(self,cmc_file_name,x_cmc_pro_api_key):
         self.CMC_FILE_NAME = cmc_file_name
         self.X_CMC_PRO_API_KEY = x_cmc_pro_api_key
+        self.quotes = {}
 
     def load_cmc_quotes_from_file(self):
         f = open(self.CMC_FILE_NAME)
+        fjson = json.loads(f.read())
+        return fjson
+
+    def load_cmc_quotes_from_arg_file(self,filename):
+        f = open(filename)
         fjson = json.loads(f.read())
         return fjson
 
@@ -16,6 +22,9 @@ class Cmc:
         f = open(self.CMC_FILE_NAME,'w')
         json.dump(self.initial_response,f)
 
+    def save_cmc_quotes_to_arg_file(self,filename):
+        f = open(filename,'w')
+        json.dump(self.initial_custom_response,f)
 
     def get_with_parameters(self,url,parameters,headers):
 
@@ -59,6 +68,7 @@ class Cmc:
         }
         if regenerate:
             fjson = self.get_with_parameters(url,parameters,headers)
+            self.initial_custom_response = fjson
         else:
             fjson = self.load_cmc_quotes_from_file()
         return fjson
@@ -76,7 +86,15 @@ class Cmc:
             if symbol in parsed_quotes.keys():
                 doublons = True
                 occurences += parsed_quotes[symbol]['occurences']
-            exchange_rate = float(d['quote']['USD']['price'])
+                parsed_quotes[symbol]['occurences'] = occurences
+                parsed_quotes[symbol]['doublons'] = True
+                symbol = symbol+"_"+str(occurences)
+            try:
+                exchange_rate = float(d['quote']['USD']['price'])
+            except TypeError as te:
+                print("acun taux d'echange pour", symbol)
+                print(d)
+                continue
             cid = d['name']+ symbol
             id = d['id']
             parsed_quotes[symbol] = {
@@ -94,7 +112,7 @@ class Cmc:
         try:
             quotes = self.get_USD_quote_of_symbols_from_cmc(symbols)
             if quotes['status']['error_code'] > 0:
-                raise BaseException("erreur recuperation quotes",quotes)
+                raise BaseException("erreur recuperation quotes",quotes,symbols)
         except BaseException as be:
             print(be)
         self.quotes = self.parse_quotes_from_cmc(quotes)
@@ -107,6 +125,7 @@ class Cmc:
                 raise BaseException("erreur recuperation quotes",quotes)
         except BaseException as be:
             print(be)
+            return self.quotes
         self.quotes = self.parse_quotes_from_cmc(quotes)
         return self.quotes
 
@@ -129,3 +148,20 @@ class Cmc:
         self.nbr_doublons = doublons
         print("nbr doublons: ",ndoublons,", nbr simple: ",nsimple)
         return simple,doublons
+
+    def get_missing_main_symbols(self,main_symbols,regenerate=True,filename="missing_symbols.json"):
+        resultat = {}
+        if not regenerate:
+            resultat = self.load_cmc_quotes_from_arg_file(filename)
+            return resultat
+        missing = []
+        for s in main_symbols.split(","):
+            if s not in self.quotes.keys():
+                missing.append(s)
+        missing_symbols_string = ",".join(missing)
+        if len(missing_symbols_string) > 0:
+            resultat = self.get_parsed_quotes_of_symbols_from_cmc(missing_symbols_string)
+        if len(resultat) > 0 and regenerate:
+            self.save_cmc_quotes_to_arg_file(filename)
+        return resultat
+

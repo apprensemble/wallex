@@ -51,7 +51,10 @@ class Tokens:
         entries = self.entries
         for index in entries.keys():
             if entries[index].missing_exchange_rate:
-                entries[index].add_exchange_rate(parsed_quotes[index]['exchange_rate'])
+                try: 
+                    entries[index].add_exchange_rate(parsed_quotes[index]['exchange_rate'])
+                except KeyError as k:
+                    print(k,"is missing from cmc_parsed_quotes")
         return entries
 
     def remove_token(self,symbol):
@@ -62,8 +65,18 @@ class Tokens:
         return removed_symbol
 
 
+    #separated by ,
     def remove_tokens(self,symbols):
         removed_symbols = {}
         for symbol in str.split(symbols,","):
             removed_symbols[symbol.upper()] = self.remove_token(symbol)
         return removed_symbols
+
+    def list_tokens(self):
+        for token in self.entries:
+            print(self.entries[token].get_json_entry())
+
+    def show_usd_prices(self):
+        for token in self.entries:
+            self.entries[token].show_usd_price()
+        

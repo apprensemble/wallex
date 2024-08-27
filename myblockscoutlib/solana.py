@@ -17,20 +17,23 @@ def get_spl_tokens_balance_from_moralis(api_key,account):
 
     for element in result:
         doublons = False
-        if element['symbol'] in entries.keys():
+        if element['symbol'].upper() in entries.keys():
             doublons = True
-        id = element['symbol']
-        entries[element['symbol']] = {
-            'id': id,
-            'symbol': element['symbol'],
+        else:
+            doublons = False
+        symbol = element['symbol'].upper()
+        entries[symbol] = {
+            'id': symbol,
+            'symbol': symbol,
             'name': element['name'],
             'native_balance': element['amount'],
             'blockchain': "Solana",
             'type': "SVM",
+            'doublons': doublons,
             'contract_address': element['associatedTokenAddress']
         }
         if doublons:
-            entries[element['symbol']]['doublons'] = True
+            entries[symbol]['doublons'] = True
     return entries   
 
 def get_sol_balance_from_moralis(api_key,account):
