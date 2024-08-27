@@ -1,4 +1,4 @@
-from myblockscoutlib import Token
+from wallex import Token
 class Tokens:
     entries: dict
     balance_by_blockchain: dict

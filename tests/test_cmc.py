@@ -1,4 +1,4 @@
-from myblockscoutlib import Cmc
+from wallex import Cmc
 
 cmc_file = "res_cmc.json"
 f = open("api_key.txt")

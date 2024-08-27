@@ -13,7 +13,7 @@ echo "url de l'API: ${new_url}"
 
 # ref repositories
 testRep=./tests/
-libRep=./myblockscoutlib/
+libRep=./wallex/
 ref="base"
 
 # info about old lib to add as new dest lib

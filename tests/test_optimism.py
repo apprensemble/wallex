@@ -1,4 +1,4 @@
-from myblockscoutlib import Token,Wallet,optimism,Config
+from wallex import Token,Wallet,optimism,Config
 
 c = Config.Config()
 mon_wallet = Wallet.Tokens()

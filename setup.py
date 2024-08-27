@@ -1,11 +1,11 @@
 from setuptools import find_packages, setup
 
 setup(
-    name='myblockscoutlib',
-    packages=find_packages(include=['myblockscoutlib']),
-    version='0.3.1',
-    description='A simple wallet watcher via Blockscout and CMC',
-    author='Me',
+    name='wallex',
+    packages=find_packages(include=['wallex']),
+    version='0.3.2',
+    description='A simple wallet watcher via Blockscout,moralis and CMC',
+    author='CryptoGrillon',
     install_requires=[],
     setup_requires=['pytest-runner'],
     tests_require=['pytest==8.3.2'],

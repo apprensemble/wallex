@@ -1,5 +1,5 @@
 import json
-from myblockscoutlib import Cmc
+from wallex import Cmc
 
 # class de configuration myWalletLib
 
