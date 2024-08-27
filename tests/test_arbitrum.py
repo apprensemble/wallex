@@ -29,5 +29,5 @@ def test_sum_tokens_usd_balances():
     assert mon_wallet.sum_balance_by_blockchain()['Base'] == cwl_entries['USD+']['usd_balance'] + cwl_entries['bsdETH']['usd_balance']
     mon_wallet.add_json_entry(arbitrum_eth_balance)
     arbitrum_eth_balance2 = mon_wallet.update_all_missing_exchange_rate_via_parsed_quotes(parsed_quotes)
-    assert mon_wallet.sum_balance_by_blockchain()['Base'] == cwl_entries['USD+']['usd_balance'] + cwl_entries['bsdETH']['usd_balance'] + arbitrum_eth_balance2['ETH'].usd_balance
+    assert mon_wallet.sum_balance_by_blockchain()['Base'] == cwl_entries['USD+']['usd_balance'] + cwl_entries['bsdETH']['usd_balance'] + arbitrum_eth_balance2['Base']['ETH'].usd_balance
     assert mon_wallet.sum_total_balance() == mon_wallet.sum_balance_by_blockchain()['Base']

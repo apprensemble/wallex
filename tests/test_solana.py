@@ -20,7 +20,7 @@ def test_add_json_entries():
     mon_wallet.add_json_entries(solana_entries)
     mon_wallet.update_all_missing_exchange_rate_via_parsed_quotes(parsed_quotes)
     mon_wallet.add_json_entry(sol_balance)
-    assert mon_wallet.entries['SOL'].native_balance == sol_balance['native_balance']
+    assert mon_wallet.entries['Solana']['SOL'].native_balance == sol_balance['native_balance']
 
 def test_sum_total_balance():
     mon_wallet.add_json_entries(solana_entries)
@@ -28,7 +28,7 @@ def test_sum_total_balance():
     mon_wallet.add_json_entry(sol_balance)
     mon_wallet.update_all_missing_exchange_rate_via_parsed_quotes(parsed_quotes)
     #mon_wallet.remove_token("pyth")
-    removed_entries = mon_wallet.remove_tokens("pyth,sol")
+    removed_entries = mon_wallet.remove_tokens_from_blockchain("pyth,sol","Solana")
     assert mon_wallet.sum_total_balance() < 1
     assert len(removed_entries.keys()) == 2
 

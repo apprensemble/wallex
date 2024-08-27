@@ -68,5 +68,17 @@ def parse_response_from_blockscout(rjson):
         'exchange_rate': float(entry['token']['exchange_rate'])
       }
       #print(entries[id]['symbol']," : ",entries[id]['usd_balance'])
+    elif entry['token']['decimals']:
+      id = entry['token']['symbol']
+      native_balance = convert_entry_from_decimals(entry)
+      entries[id] = {
+        'id': id,
+        'name': entry['token']['name'],
+        'symbol': entry['token']['symbol'],
+        'contract_address': entry['token']['address'],
+        'native_balance': native_balance,
+        'blockchain': "Base",
+        'type': "EVM",
+      }
     else: continue
   return entries

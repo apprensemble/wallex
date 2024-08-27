@@ -14,9 +14,9 @@ def get_tokens_balance_from_blockscout(account) -> dict:
 
 def get_native_balance_from_blockscout(account) -> dict:
   entry = {
-    'id': "ETH",
-    'symbol': "ETH",
-    'name': "Ethereum",
+    'id': "MNT",
+    'symbol': "MNT",
+    'name': "Mantle",
     'native_balance': 0.0,
     'blockchain': "Mantle",
     'type': "EVM"

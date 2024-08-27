@@ -55,10 +55,6 @@ def get_sol_balance_from_moralis(api_key,account):
         'blockchain': "Solana",
         'type': "SVM"
     }
-    params = {
-    "network": "mainnet",
-    "address": account
-    }
 
     url_suffixe = account+'/balance'
     url = 'https://solana-gateway.moralis.io/account/mainnet/' + url_suffixe

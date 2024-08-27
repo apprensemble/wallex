@@ -22,12 +22,12 @@ def add_json_entries():
 
 def test_get_native_balance_from_blockscout():
     mantle_eth_balance = mantle.get_native_balance_from_blockscout(c.evm_wallets['CWL'])
-    assert mantle_eth_balance['id'] == 'ETH'
+    assert mantle_eth_balance['id'] == 'MNT'
 
 def test_sum_tokens_usd_balances():
     mon_wallet.add_json_entries(cwl_entries)
     assert mon_wallet.sum_balance_by_blockchain()['Base'] == cwl_entries['USD+']['usd_balance'] + cwl_entries['bsdETH']['usd_balance']
     mon_wallet.add_json_entry(mantle_eth_balance)
     mantle_eth_balance2 = mon_wallet.update_all_missing_exchange_rate_via_parsed_quotes(parsed_quotes)
-    assert mon_wallet.sum_balance_by_blockchain()['Base'] == cwl_entries['USD+']['usd_balance'] + cwl_entries['bsdETH']['usd_balance'] + mantle_eth_balance2['ETH'].usd_balance
+    assert mon_wallet.sum_balance_by_blockchain()['Base'] == cwl_entries['USD+']['usd_balance'] + cwl_entries['bsdETH']['usd_balance'] + mantle_eth_balance2['Base']['ETH'].usd_balance
     assert mon_wallet.sum_total_balance() == mon_wallet.sum_balance_by_blockchain()['Base']
