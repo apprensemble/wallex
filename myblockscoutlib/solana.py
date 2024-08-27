@@ -1,21 +1,31 @@
 from requests import Session
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
-from moralis import sol_api
 
+def get_with_parameters(url,parameters,headers):
+
+  session = Session()
+  session.headers.update(headers)
+
+  try:
+    response = session.get(url, params=parameters)
+  except (ConnectionError, Timeout, TooManyRedirects) as e:
+    print(e)
+  return response.json()
 
 def get_spl_tokens_balance_from_moralis(api_key,account):
-    entries = {}
-    params = {
-    "network": "mainnet",
-    "address": account
+    url_suffixe = account+"/tokens"
+    url = 'https://solana-gateway.moralis.io/account/mainnet/' + url_suffixe
+    parameters = {
     }
+    headers = {
+        'Accepts': 'application/json',
+        'X-API-Key': api_key
 
-    result = sol_api.account.get_spl(
-    api_key=api_key,
-    params=params,
-    )
+    }
+    rjson =  get_with_parameters(url,parameters,headers)
+    entries = {}
 
-    for element in result:
+    for element in rjson:
         doublons = False
         if element['symbol'].upper() in entries.keys():
             doublons = True
@@ -50,10 +60,15 @@ def get_sol_balance_from_moralis(api_key,account):
     "address": account
     }
 
-    result = sol_api.account.balance(
-    api_key=api_key,
-    params=params,
-    )
-    entry["native_balance"] = float(result['solana'])
+    url_suffixe = account+'/balance'
+    url = 'https://solana-gateway.moralis.io/account/mainnet/' + url_suffixe
+    parameters = {
+    }
+    headers = {
+        'Accepts': 'application/json',
+        'X-API-Key': api_key
+    }
+    rjson =  get_with_parameters(url,parameters,headers)
+    entry["native_balance"] = float(rjson['solana'])
     return entry
 
