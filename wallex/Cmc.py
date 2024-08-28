@@ -52,6 +52,7 @@ class Cmc:
         if regenerate:
             fjson = self.get_with_parameters(url,parameters,headers)
             self.initial_response = fjson
+            self.save_cmc_quotes_to_file()
         else:
             fjson = self.load_cmc_quotes_from_file()
         return fjson
@@ -129,12 +130,12 @@ class Cmc:
         self.quotes = self.parse_quotes_from_cmc(quotes)
         return self.quotes
 
-    def separate_solo_and_doublons_quotes(self):
+    def separate_solo_and_doublons_quotes(self,regenerate=False):
         doublons = {}
         simple = {}
         ndoublons = 0
         nsimple = 0
-        quotes = self.get_parsed_quotes()
+        quotes = self.get_parsed_quotes(regenerate)
         for id in quotes.keys():
             if quotes[id]['occurences'] > 1:
                 doublons[id] = quotes[id]
