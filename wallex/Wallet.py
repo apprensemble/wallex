@@ -66,7 +66,6 @@ class Tokens:
     # il suffit d'avoir les quotes dans un dict tel que dict[symbol][exchange_rate]
         entries = self.entries
         for blockchain in entries.keys():
-            print(blockchain,",,",entries[blockchain])
             for index in entries[blockchain]:
                 if entries[blockchain][index].missing_exchange_rate:
                     try: 

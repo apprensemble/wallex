@@ -18,7 +18,7 @@ def get_native_balance_from_blockscout(account) -> dict:
     'symbol': "ETH",
     'name': "Ethereum",
     'native_balance': 0.0,
-    'blockchain': "Base",
+    'blockchain': "Optimism",
     'type': "EVM"
   }
   url = "https://optimism.blockscout.com/api"
@@ -63,7 +63,7 @@ def parse_response_from_blockscout(rjson):
         'contract_address': entry['token']['address'],
         'native_balance': native_balance,
         'usd_balance': usd_balance,
-        'blockchain': "Base",
+        'blockchain': "Optimism",
         'type': "EVM",
         'exchange_rate': float(entry['token']['exchange_rate'])
       }
@@ -77,7 +77,7 @@ def parse_response_from_blockscout(rjson):
         'symbol': entry['token']['symbol'],
         'contract_address': entry['token']['address'],
         'native_balance': native_balance,
-        'blockchain': "Base",
+        'blockchain': "Optimism",
         'type': "EVM",
       }
     else: continue

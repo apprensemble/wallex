@@ -68,4 +68,4 @@ class Token:
         try:
             print(self.symbol," ",self.usd_balance)
         except AttributeError as ae:
-            print(self.symbol," pas de valeur usd")
+            pass

@@ -93,7 +93,7 @@ class Cmc:
                 exchange_rate = float(d['quote']['USD']['price'])
             except TypeError as te:
                 print("acun taux d'echange pour", symbol)
-                print(d)
+                print(te)
                 continue
             cid = d['name']+ symbol
             id = d['id']
