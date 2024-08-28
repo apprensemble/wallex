@@ -77,8 +77,11 @@ class Tokens:
     def remove_token_from_blockchain(self,symbol,blockchain):
         removed_symbol = ""
         symbol = symbol.upper()
-        if symbol in self.entries[blockchain].keys():
-            removed_symbol = self.entries[blockchain].pop(symbol)
+        try:
+            if symbol in self.entries[blockchain].keys():
+                removed_symbol = self.entries[blockchain].pop(symbol)
+        except KeyError as ke:
+            print(ke)
         return removed_symbol
 
 
@@ -87,6 +90,14 @@ class Tokens:
         removed_symbols = {}
         for symbol in str.split(symbols,","):
             removed_symbols[symbol.upper()] = self.remove_token_from_blockchain(symbol,blockchain)
+        return removed_symbols
+
+    #separated by ,
+    def remove_tokens_from_blockchains(self,symbols,blockchains):
+        removed_symbols = {}
+        for symbol in str.split(symbols,","):
+            for blockchain in blockchains.split(","):
+                removed_symbols[symbol.upper()] = self.remove_token_from_blockchain(symbol,blockchain)
         return removed_symbols
 
     def list_tokens(self):
