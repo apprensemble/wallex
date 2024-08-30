@@ -109,4 +109,28 @@ class Scraper:
       resultat[egld_wallet] = round(float(self.get_balance_multivers_from_explorer(egld_wallets[egld_wallet])),2)
     return resultat
 
-  
+  def get_balance_solana_from_solscan(self,sol_pubkey):
+    url_solscan = "https://solscan.io/account/"
+    self.driver.get(url_solscan+sol_pubkey)
+    time.sleep(12)
+
+    content = self.driver.find_elements(By.CSS_SELECTOR,"div[class*='not-italic font-normal text-[14px] leading-[24px] text-neutral5'")
+    resultat_1 = 0.0
+    resultat_2 = 0.0
+    try:
+      resultat_1 = round(float(content[1].text.replace("($","").replace(",","").replace(")","")),2)
+    except:
+      resultat_1 = 0.0
+    try:
+      resultat_2 = round(float(content[3].text.replace("($","").replace(",","").replace(")","")),2)
+    except:
+      resultat_2 = 0.0
+    resultat = {sol_pubkey:resultat_1+resultat_2}
+    self.history.add_content(resultat)
+    return resultat[sol_pubkey]
+
+  def get_balances_solana_from_solscan(self,sol_wallets):
+    resultat = {}
+    for sol_wallet in sol_wallets.keys():
+      resultat[sol_wallet] = round(float(self.get_balance_solana_from_solscan(sol_wallets[sol_wallet])),2)
+    return resultat
