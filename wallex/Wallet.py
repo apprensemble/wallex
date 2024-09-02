@@ -115,7 +115,7 @@ class Tokens:
             print(" ")
             for token in self.entries[blockchain]:
                 self.entries[blockchain][token].show_usd_price()
-        
+
     def show_tokens_without_exchange_rate(self):
         for blockchain in self.entries:
             print(" ")
@@ -125,3 +125,50 @@ class Tokens:
                 if self.entries[blockchain][token].missing_exchange_rate:
                     entry = self.entries[blockchain][token]
                     print(entry.id," ",entry.native_balance)
+
+    def get_detailled_balance_by_blockchain(self):
+        bc = {}
+        for blockchain in self.entries:
+            bc[blockchain] = []
+            for token in self.entries[blockchain]:
+                try:
+                    bc[blockchain].append({token:self.entries[blockchain][token].usd_balance})
+                except AttributeError:
+                    continue
+        return bc
+
+    def get_detailled_balance_by_token(self):
+        tokens = {}
+        for blockchain in self.entries:
+            for token in self.entries[blockchain]:
+                if token in tokens.keys():
+                    try:
+                        tokens[token].update({blockchain:self.entries[blockchain][token].usd_balance})
+                    except AttributeError:
+                        continue
+                else:
+                    try:
+                        tokens[token] = {blockchain:self.entries[blockchain][token].usd_balance}
+                    except AttributeError:
+                        continue
+        return tokens
+
+    def get_detailled_balance_by_summarized_token(self,ordo=True):
+        tokens = {}
+        for blockchain in self.entries:
+            for token in self.entries[blockchain]:
+                if token in tokens.keys():
+                    try:
+                        tokens[token] += round(self.entries[blockchain][token].usd_balance,2)
+                    except AttributeError:
+                        continue
+                else:
+                    try:
+                        tokens[token] = round(self.entries[blockchain][token].usd_balance,2)
+                    except AttributeError:
+                        continue
+        if sorted:
+            resultat = dict(sorted(tokens.items(), key=lambda item: item[1],reverse=True))
+        else:
+            resultat = tokens
+        return resultat

@@ -26,7 +26,7 @@ class Scraper:
     # Pass the defined options objects to initialize the web driver 
     driver = Chrome(options=options) 
     # Set an implicit wait of 5 seconds to allow time for elements to appear before throwing an exception
-    driver.implicitly_wait(5)
+    driver.implicitly_wait(15)
     self.driver = driver
     # history file
     # { YEARYDAYH: {pubkey: [total]},{...}}
@@ -61,7 +61,7 @@ class Scraper:
     if self.time_checker("debank"):
       url_dbank = "https://debank.com/profile/" 
       self.driver.get(url_dbank+evm_pubkey) 
-      time.sleep(10)
+      time.sleep(20)
 
       content = self.driver.find_element(By.CSS_SELECTOR, "div[class*='HeaderInfo_totalAssetInner__HyrdC HeaderInfo_curveEnable__HVRYq'")
       resultat = {evm_pubkey:round(float(content.text.replace("$","").replace(",","")),2)}
@@ -79,7 +79,7 @@ class Scraper:
   def get_balance_bitcoin_from_mempool(self,btc_pubkey):
     url_mempool = "https://mempool.space/address/" 
     self.driver.get(url_mempool+btc_pubkey) 
-    time.sleep(10)
+    time.sleep(15)
 
     content = self.driver.find_element(By.CSS_SELECTOR, "span[class*='green-color'")
     resultat = {btc_pubkey:round(float(content.text.replace("$","").replace(",","")),2)}
@@ -96,7 +96,7 @@ class Scraper:
   def get_balance_multivers_from_explorer(self,egld_pubkey):
     url_egld = "https://explorer.multiversx.com/accounts/"
     self.driver.get(url_egld+egld_pubkey) 
-    time.sleep(12)
+    time.sleep(15)
 
     content = self.driver.find_elements(By.CSS_SELECTOR, "span[class*='cursor-context text-truncate'")
     resultat = {egld_pubkey:round(float(content[2].text.replace("$","").replace(",","")),2)}
@@ -112,7 +112,7 @@ class Scraper:
   def get_balance_solana_from_solscan(self,sol_pubkey):
     url_solscan = "https://solscan.io/account/"
     self.driver.get(url_solscan+sol_pubkey)
-    time.sleep(12)
+    time.sleep(15)
 
     content = self.driver.find_elements(By.CSS_SELECTOR,"div[class*='not-italic font-normal text-[14px] leading-[24px] text-neutral5'")
     resultat_1 = 0.0
@@ -125,7 +125,7 @@ class Scraper:
       resultat_2 = round(float(content[3].text.replace("($","").replace(",","").replace(")","")),2)
     except:
       resultat_2 = 0.0
-    resultat = {sol_pubkey:resultat_1+resultat_2}
+    resultat = {sol_pubkey:round(resultat_1+resultat_2,2)}
     self.history.add_content(resultat)
     return resultat[sol_pubkey]
 
@@ -134,3 +134,6 @@ class Scraper:
     for sol_wallet in sol_wallets.keys():
       resultat[sol_wallet] = round(float(self.get_balance_solana_from_solscan(sol_wallets[sol_wallet])),2)
     return resultat
+
+  def get_history(self):
+    return self.history.history

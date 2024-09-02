@@ -38,7 +38,13 @@ class Logger:
     heure_presente = time.localtime()
     year = str(heure_presente.tm_year).split("20")[1]
     yday = str(heure_presente.tm_yday)
+    if int(yday) < 10:
+      yday = "00"+yday
+    elif int(yday) < 100:
+      yday = "0"+yday
     hour = str(heure_presente.tm_hour)
+    if int(hour) < 10:
+      hour = "0"+hour
     minutes = heure_presente.tm_min
     if minutes > 30:
       demi_h = str(2)
@@ -54,4 +60,4 @@ class Logger:
     else:
       self.history.update({ref:content})
     self.save_to_file(self.history_file,self.history)
-    print("new record")
+    print("new recordt ",ref)

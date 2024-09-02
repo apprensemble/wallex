@@ -1,0 +1,37 @@
+{
+  "tags": [
+    "strategies",
+    "categories"
+  ],
+  "strategies": [
+    "hold",
+    "earn",
+    "lock",
+    "investissement"
+  ],
+  "hold":
+  {
+    "nom": "hold",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": ["WSTETH", "ETH", "MSOL", "CBETH", "SOL", "BTC", "SCROLL", "BTCB", "JITOSOL"]
+  },
+  "earn":{
+    "nom": "earn",
+    "kind": "strategie",
+    "description":"blabla",
+    "tokens": ["USDC", "VELO", "ETH", "AIDOGE", "ORCA", "FBOMB", "AERO", "MNT", "JUP"]
+  },
+  "lock":{
+    "nom": "lock",
+    "kind": "strategie",
+    "description":"blabla",
+    "tokens": ["USDC", "OVN", "BEEFY", "USD+", "NOT", "SONNE"]
+  },
+  "investissement":{
+    "nom": "investissement",
+    "kind": "strategie",
+    "description":"blabla",
+    "tokens": ["USDC", "OVN", "GMX", "JLP", "DOT", "ARB", "MATIC", "BEEFY", "EGLD", "AVAX", "TON", "JUP", "OP"] 
+  }
+}

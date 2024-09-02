@@ -2,6 +2,7 @@ from requests import Session
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
 
 def get_tokens_balance_from_blockscout(account) -> dict:
+  resultat = {}
   url_suffixe = "/addresses/"+account+"/token-balances"
   url = "https://optimism.blockscout.com/api/v2" + url_suffixe
   parameters = {
@@ -10,7 +11,10 @@ def get_tokens_balance_from_blockscout(account) -> dict:
     'Accepts': 'application/json'
   }
   rjson =  get_with_parameters(url,parameters,headers)
-  return parse_response_from_blockscout(rjson)
+  if "message" in rjson:
+    return resultat
+  resultat = parse_response_from_blockscout(rjson)
+  return resultat
 
 def get_native_balance_from_blockscout(account) -> dict:
   entry = {
@@ -69,6 +73,8 @@ def parse_response_from_blockscout(rjson):
       }
       #print(entries[id]['symbol']," : ",entries[id]['usd_balance'])
     elif entry['token']['decimals']:
+      continue     
+      # je n'ajoute plus les elements sans exchange_rate car ce sont souvent des scams
       id = entry['token']['symbol']
       native_balance = convert_entry_from_decimals(entry)
       entries[id] = {
@@ -77,7 +83,7 @@ def parse_response_from_blockscout(rjson):
         'symbol': entry['token']['symbol'],
         'contract_address': entry['token']['address'],
         'native_balance': native_balance,
-        'blockchain': "Optimism",
+        'blockchain': "Base",
         'type': "EVM",
       }
     else: continue
