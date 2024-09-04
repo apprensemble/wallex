@@ -1,4 +1,5 @@
 from wallex import Token,solana,Wallet,base,Config, optimism, arbitrum, mantle,Scraper
+import json
 
 class WalletManager:
   mes_wallets: dict[str:Wallet.Tokens]
@@ -9,20 +10,50 @@ class WalletManager:
     self.mes_wallets = {}
     self.tags = self.config.load_file("tags.json")
     self.parsed_quotes = self.config.cmc.get_parsed_quotes(False)
+    self.wallets_to_export = {}
+
+  def add_cwl(self):
+    c = self.config
+    parsed_quotes = self.parsed_quotes
+    cwl_base = base.get_tokens_balance_from_blockscout(c.evm_wallets['CWL'])
+    cwl_optimism = optimism.get_tokens_balance_from_blockscout(c.evm_wallets['CWL'])
+    cwl_arbitrum = arbitrum.get_tokens_balance_from_blockscout(c.evm_wallets['CWL'])
+    cwl_mantle = mantle.get_tokens_balance_from_blockscout(c.evm_wallets['CWL'])
+    cwl_base_native =base.get_native_balance_from_blockscout(c.evm_wallets['CWL'])
+    cwl_optimism_native = optimism.get_native_balance_from_blockscout(c.evm_wallets['CWL'])
+    cwl_arbitrum_native = arbitrum.get_native_balance_from_blockscout(c.evm_wallets['CWL'])
+    cwl_mantle_native = mantle.get_native_balance_from_blockscout(c.evm_wallets['CWL'])
+
+    mon_wallet = Wallet.Tokens()
+    mon_wallet.add_json_entry(cwl_base_native)
+    mon_wallet.add_json_entry(cwl_optimism_native)
+    mon_wallet.add_json_entry(cwl_arbitrum_native)
+    mon_wallet.add_json_entry(cwl_mantle_native)
+    mon_wallet.add_json_entries(cwl_base)
+    mon_wallet.add_json_entries(cwl_optimism)
+    mon_wallet.add_json_entries(cwl_arbitrum)
+    mon_wallet.add_json_entries(cwl_mantle)
+    mon_wallet.name = "cwl"
+    mon_wallet.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
+    self.mes_wallets.update({mon_wallet.name:mon_wallet})
+
+
+    
 
   def fulfill_wallet(self):
     c = self.config
     parsed_quotes = self.parsed_quotes
     mes_wallets = {}
     for wallet in c.svm_wallets:
-      mon_wallet = Wallet.Tokens()
+      mon_wallet = Wallet.Tokens(wallet)
       mon_wallet.add_json_entries(solana.get_spl_tokens_balance_from_moralis(c.moralis_api_key,c.svm_wallets[wallet]))
       mon_wallet.add_json_entry(solana.get_sol_balance_from_moralis(c.moralis_api_key,c.svm_wallets[wallet]))
       mon_wallet.remove_token_from_blockchain('PYTH','Solana')
-      mon_wallet.update_all_missing_exchange_rate_via_parsed_quotes(parsed_quotes)
+      #mon_wallet.update_all_missing_exchange_rate_via_parsed_quotes(parsed_quotes)
+      mon_wallet.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
       mes_wallets.update({wallet:mon_wallet})
     for wallet in c.evm_wallets:
-      mon_wallet = Wallet.Tokens()
+      mon_wallet = Wallet.Tokens(wallet)
       mon_wallet.add_json_entry(arbitrum.get_native_balance_from_blockscout(c.evm_wallets[wallet]))
       mon_wallet.add_json_entry(optimism.get_native_balance_from_blockscout(c.evm_wallets[wallet]))
       mon_wallet.add_json_entry(mantle.get_native_balance_from_blockscout(c.evm_wallets[wallet]))
@@ -31,7 +62,8 @@ class WalletManager:
       mon_wallet.add_json_entries(arbitrum.get_tokens_balance_from_blockscout(c.evm_wallets[wallet]))
       mon_wallet.add_json_entries(mantle.get_tokens_balance_from_blockscout(c.evm_wallets[wallet]))
       mon_wallet.add_json_entries(base.get_tokens_balance_from_blockscout(c.evm_wallets[wallet]))
-      mon_wallet.update_all_missing_exchange_rate_via_parsed_quotes(parsed_quotes)
+      #mon_wallet.update_all_missing_exchange_rate_via_parsed_quotes(parsed_quotes)
+      mon_wallet.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
       mes_wallets.update({wallet:mon_wallet})
 
       self.mes_wallets = mes_wallets
@@ -91,4 +123,67 @@ class WalletManager:
             resultat.update({token:round(sum[token],2)})
     return resultat
 
+  def fusion_wallets_1_2_in_a_third_named(self,wallet1:Wallet.Tokens,wallet2:Wallet.Tokens,nom_wallet_final:str):
+    #fusion
+    wallet3 = Wallet.Tokens()
+    for blockchain in wallet1.entries:
+      wallet3.entries[blockchain] = {}
+      w3 = wallet3.entries[blockchain]
+      w1 = wallet1.entries[blockchain]
+      if blockchain in wallet2.entries:
+        #addition
+        w2 = wallet2.entries[blockchain]
+        for token in w1:
+          if token in w2:
+            for balance_type in ["native_balance","usd_balance"]:
+              total = 0.0
+              if hasattr(w1[token],balance_type) and hasattr(w2[token],balance_type):
+                total = getattr(w1[token],balance_type) + getattr(w2[token],balance_type)
+              elif hasattr(w1[token],balance_type):
+                total = getattr(w1[token],balance_type)
+              elif hasattr(w2[token],balance_type):
+                total = getattr(w2[token],balance_type)
+              if token not in w3:
+                w3[token] = Token.Token(w1[token].get_json_entry())
+              setattr(w3[token],balance_type,total)
+          else:
+            w3[token] = w1[token]
+        for token in w2:
+          if token not in w1:
+            w3[token] = w2[token]
+      else:
+        for token in w1:
+          w3[token] = Token.Token(w1[token].get_json_entry())
+    for blockchain in wallet2.entries:
+      w2 = wallet2.entries[blockchain]
+      if blockchain not in wallet1.entries:
+        wallet3.entries[blockchain] = {}
+        w3 = wallet3.entries[blockchain]
+        for token in w2:
+          w3[token] = Token.Token(w2[token].get_json_entry())
+    self.mes_wallets.update({nom_wallet_final:wallet3})
+    return wallet3
 
+  def export_custom_wallet_as_json(self,wallet:Wallet.Tokens):
+    blockchains = {}
+    for blockchain in wallet.entries:
+      blockchains[blockchain] = {}
+      for token in wallet.entries[blockchain]:
+        entry: Token.Token = wallet.entries[blockchain][token]
+        json_entry = entry.get_json_entry()
+        blockchains[blockchain][token] = json_entry
+    resultat = {wallet.name:blockchains}
+    self.wallets_to_export.update(resultat)
+    return blockchains
+
+  def import_custom_wallets_from_json_file(self,filename="custom_wallets.json"):
+    wallets = self.config.load_file(filename)
+    for wallet in wallets:
+      mon_wallet = Wallet.Tokens()
+      mon_wallet.add_json_entries_from_multi_blockchain(wallets[wallet])
+      mon_wallet.name = wallet
+      self.mes_wallets.update({mon_wallet.name:mon_wallet})
+
+  def save_exported_wallets(self,filename="custom_wallets.json"):
+    c = self.config
+    c.save_to_file(filename,self.wallets_to_export)

@@ -3,11 +3,13 @@ class Tokens:
     entries: dict
     balance_by_blockchain: dict
     total_balance: float
+    name: str
 
-    def __init__(self):
+    def __init__(self,name="aucun"):
         self.entries = {
 
         }
+        self.name = name
         self.balance_by_blockchain = {}
 
     def add_entry(self,token: Token.Token):
@@ -58,6 +60,17 @@ class Tokens:
             self.entries[blockchain][id] = Token.Token(entry)
         return self.entries
 
+    def add_json_entries_from_multi_blockchain(self,entries):
+        # Il faudrait check les entries
+        for blockchain in entries:
+            print("entries",entries)
+            if 'symbol' in entries[blockchain]:
+                # it's an entry
+                self.add_json_entry(entries[blockchain])
+            else:
+                for entry in entries[blockchain]:
+                    self.add_entry(Token.Token(entries[blockchain][entry]))
+
     def add_tokens(self,tokens):
         for token in tokens:
             self.add_entry(token)
@@ -72,6 +85,17 @@ class Tokens:
                         entries[blockchain][index].add_exchange_rate(parsed_quotes[index]['exchange_rate'])
                     except KeyError as k:
                         print(k,"is missing from cmc_parsed_quotes")
+        return entries
+
+    def update_all_exchange_rate_via_parsed_quotes(self,parsed_quotes):
+    # il suffit d'avoir les quotes dans un dict tel que dict[symbol][exchange_rate]
+        entries = self.entries
+        for blockchain in entries.keys():
+            for index in entries[blockchain]:
+                try: 
+                    entries[blockchain][index].add_exchange_rate(parsed_quotes[index]['exchange_rate'])
+                except KeyError as k:
+                    print(k,"is missing from cmc_parsed_quotes")
         return entries
 
     def remove_token_from_blockchain(self,symbol,blockchain):

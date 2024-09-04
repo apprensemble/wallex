@@ -23,33 +23,33 @@ class Token:
     missing_exchange_rate: bool
 
 
-
-    def __init__(self,id, name, symbol, native_balance, type = "EVM") -> None:
-        self.id = id
-        self.name = name
-        self.symbol = symbol
-        self.native_balance = native_balance
-        self.type = type
-        self.missing_exchange_rate = True
-    
-    def __init__(self,id, name, symbol, native_balance, type, exchange_rate) -> None:
-        self.id = id
-        self.name = name
-        self.symbol = symbol
-        self.native_balance = native_balance
-        self.exchange_rate = exchange_rate
-        self.type = type
-        self.usd_balance = exchange_rate * native_balance
-        self.missing_exchange_rate = False
+# les surdefinition n'existent pas :-/
+#    def __init__(self,id, name, symbol, native_balance, type = "EVM") -> None:
+#        self.id = id
+#        self.name = name
+#        self.symbol = symbol
+#        self.native_balance = native_balance
+#        self.type = type
+#        self.missing_exchange_rate = True
+#    
+#    def __init__(self,id, name, symbol, native_balance, type, exchange_rate) -> None:
+#        self.id = id
+#        self.name = name
+#        self.symbol = symbol
+#        self.native_balance = native_balance
+#        self.exchange_rate = exchange_rate
+#        self.type = type
+#        self.usd_balance = exchange_rate * native_balance
+#        self.missing_exchange_rate = False
 
     def __init__(self,entry):
         self.id = entry['id']
         self.name = entry['name']
         self.symbol = entry['symbol']
-        self.native_balance = entry['native_balance']
+        self.native_balance = float(entry['native_balance'])
         if "exchange_rate" in entry.keys():
-            self.exchange_rate = entry['exchange_rate']
-            self.usd_balance = entry['exchange_rate'] * entry['native_balance']
+            self.exchange_rate = float(entry['exchange_rate'])
+            self.usd_balance = self.exchange_rate * self.native_balance
             self.missing_exchange_rate = False
         else:
             self.missing_exchange_rate = True
@@ -62,7 +62,7 @@ class Token:
         self.missing_exchange_rate = False
 
     def get_json_entry(self):
-        return json.dumps(self.__dict__)
+        return self.__dict__
 
     def show_usd_price(self):
         try:
