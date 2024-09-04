@@ -48,7 +48,8 @@ Certaines sections ont aussi un separateur :
 
 Le reste n'a qu'un element ne pas porter attention aux "_" :-/
 
-D'ou mon envie de faire du TOML...C'est pas compliqué aujourd'hui pour moi mais demain...Et pour un utilisateur tiers ça doit deja etre compliqué.
+~~D'ou mon envie de faire du TOML...C'est pas compliqué aujourd'hui pour moi mais demain...Et pour un utilisateur tiers ça doit deja etre compliqué.~~
+Reflexion faite le TOML n'est pas utile car il n'y a que les tags à parser. La concatenation des actifs DEX n'a pas à l'etre car je dois le differentier du reste.
 
 ### custom_wallets.json
 

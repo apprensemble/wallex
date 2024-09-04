@@ -21,7 +21,7 @@ def add_json_entries():
     assert mon_wallet.entries['ARB']['native_balance'] == arbitrum_eth_balance['native_balance']
 
 def test_get_native_balance_from_blockscout():
-    arbitrum_eth_balance = arbitrum.get_native_balance_from_blockscout(c.evm_wallets['CWL'])
+    arbitrum_eth_balance = arbitrum.get_native_balance_from_blockscout(c.evm_wallets['cwl'])
     assert arbitrum_eth_balance['id'] == 'ARB'
 
 def test_sum_tokens_usd_balances():

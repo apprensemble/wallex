@@ -21,7 +21,7 @@ def add_json_entries():
     assert mon_wallet.entries['ETH']['native_balance'] == base_eth_balance['native_balance']
 
 def test_get_native_balance_from_blockscout():
-    base_eth_balance = base.get_native_balance_from_blockscout(c.evm_wallets['CWL'])
+    base_eth_balance = base.get_native_balance_from_blockscout(c.evm_wallets['cwl'])
     assert base_eth_balance['id'] == 'ETH'
 
 def test_sum_tokens_usd_balances():

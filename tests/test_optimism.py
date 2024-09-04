@@ -21,7 +21,7 @@ def add_json_entries():
     assert mon_wallet.entries['ETH']['native_balance'] == optimism_eth_balance['native_balance']
 
 def test_get_native_balance_from_blockscout():
-    optimism_eth_balance = optimism.get_native_balance_from_blockscout(c.evm_wallets['CWL'])
+    optimism_eth_balance = optimism.get_native_balance_from_blockscout(c.evm_wallets['cwl'])
     assert optimism_eth_balance['id'] == 'ETH'
 
 def test_sum_tokens_usd_balances():

@@ -15,14 +15,14 @@ class WalletManager:
   def add_cwl(self):
     c = self.config
     parsed_quotes = self.parsed_quotes
-    cwl_base = base.get_tokens_balance_from_blockscout(c.evm_wallets['CWL'])
-    cwl_optimism = optimism.get_tokens_balance_from_blockscout(c.evm_wallets['CWL'])
-    cwl_arbitrum = arbitrum.get_tokens_balance_from_blockscout(c.evm_wallets['CWL'])
-    cwl_mantle = mantle.get_tokens_balance_from_blockscout(c.evm_wallets['CWL'])
-    cwl_base_native =base.get_native_balance_from_blockscout(c.evm_wallets['CWL'])
-    cwl_optimism_native = optimism.get_native_balance_from_blockscout(c.evm_wallets['CWL'])
-    cwl_arbitrum_native = arbitrum.get_native_balance_from_blockscout(c.evm_wallets['CWL'])
-    cwl_mantle_native = mantle.get_native_balance_from_blockscout(c.evm_wallets['CWL'])
+    cwl_base = base.get_tokens_balance_from_blockscout(c.evm_wallets['cwl'])
+    cwl_optimism = optimism.get_tokens_balance_from_blockscout(c.evm_wallets['cwl'])
+    cwl_arbitrum = arbitrum.get_tokens_balance_from_blockscout(c.evm_wallets['cwl'])
+    cwl_mantle = mantle.get_tokens_balance_from_blockscout(c.evm_wallets['cwl'])
+    cwl_base_native =base.get_native_balance_from_blockscout(c.evm_wallets['cwl'])
+    cwl_optimism_native = optimism.get_native_balance_from_blockscout(c.evm_wallets['cwl'])
+    cwl_arbitrum_native = arbitrum.get_native_balance_from_blockscout(c.evm_wallets['cwl'])
+    cwl_mantle_native = mantle.get_native_balance_from_blockscout(c.evm_wallets['cwl'])
 
     mon_wallet = Wallet.Tokens()
     mon_wallet.add_json_entry(cwl_base_native)
@@ -163,6 +163,14 @@ class WalletManager:
           w3[token] = Token.Token(w2[token].get_json_entry())
     self.mes_wallets.update({nom_wallet_final:wallet3})
     return wallet3
+
+  def fusion_wallets_by_name_1_2_in_3(self,first:str,second:str,name_of_the_result:str):
+    w1 = self.mes_wallets[first]
+    w2 = self.mes_wallets[second]
+    w3 = self.fusion_wallets_1_2_in_a_third_named(w1,w2,name_of_the_result)
+    return w3
+
+
 
   def export_custom_wallet_as_json(self,wallet:Wallet.Tokens):
     blockchains = {}

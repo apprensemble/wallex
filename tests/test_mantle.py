@@ -21,7 +21,7 @@ def add_json_entries():
     assert mon_wallet.entries['MNT']['native_balance'] == mantle_eth_balance['native_balance']
 
 def test_get_native_balance_from_blockscout():
-    mantle_eth_balance = mantle.get_native_balance_from_blockscout(c.evm_wallets['CWL'])
+    mantle_eth_balance = mantle.get_native_balance_from_blockscout(c.evm_wallets['cwl'])
     assert mantle_eth_balance['id'] == 'MNT'
 
 def test_sum_tokens_usd_balances():
