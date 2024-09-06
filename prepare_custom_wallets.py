@@ -1,7 +1,7 @@
 #!.venv/bin/python
 from wallex import Config
 
-resultat = [[x for x in line.split(":")] for line in open("extra_position.txt") if len(line) > 1]
+resultat = [[x for x in line.split(":")] for line in open("extra_position.txt") if len(line) > 1 and "#" not in line]
 c = Config.Config()
 def create_tags_file(filename):
   #take lines
@@ -27,7 +27,7 @@ def create_tags_file(filename):
   # 'LOCKED': ['AERO', 'VELO', 'JUP'], 'FARMING': ['BEEFY_CBETH_WETH', 'ORCA_JUP_USDC'], 'STACKING': ['ARBDOGE_AIDOGE', 'ABR', 'ETH'], 'TOKEN': ['MKR', 'BTCB', 'BNB'], 'HOLD': ['TON', 'NOT', 'NOT', 'TON', 'TON', 'BTC'], 'NOTSCRAPED': ['TON', 'NOT', 'NOT', 'TON', 'TON', 'JUP', 'ORCA_JUP_USDC'], 'CEX': ['TON']}
 
   tag_file = { title:{"nom": title, "kind":"strategie", "description":"blabla",
-                  "tokens":tokens} for (title,tokens) in tags.items()}
+                  "tokens":list(set(tokens))} for (title,tokens) in tags.items()}
 
   c.save_to_file(filename,tag_file)
   return tag_file

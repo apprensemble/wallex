@@ -11,6 +11,8 @@ class WalletManager:
     self.tags = self.config.load_file("tags.json")
     self.parsed_quotes = self.config.cmc.get_parsed_quotes(False)
     self.wallets_to_export = {}
+    #patch: il faut que j'externalise les truc perso
+    self.all_my_personnal_wallets = ['binance_sol', 'bybit_sol', 'cwsol', 'TELEGRAM', 'BITGET', 'CWDCA', 'custom_cwl', 'custom_phantom_sol','custom_binance_evm', 'custom_bybit_evm', 'custom_coinbasewallet']
 
   def add_cwl(self):
     c = self.config
@@ -37,49 +39,57 @@ class WalletManager:
     mon_wallet.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
     self.mes_wallets.update({mon_wallet.name:mon_wallet})
 
-
-    
+# Note pour plus tard penser à faire une fonction de remplacement du symbol lorsque l'on souhaite le moins populaire.
+# certainenement à faire par blockchain et par wallet. Depuis le fichier de config ou un autre.
+# exemple : 
+# a_changer = {'VELO':'VELO_2', 'WBTC':'WBTC_2'}
+#{token:{'id':obj['id'], 'name':obj['name'], 'contract_address':obj['contract_address'], 'native_balance':obj['native_balance'], 'usd_balance':obj['usd_balance'], 'blockchain':obj['blockchain'], 'type':obj['type'], 'exchange_rate':obj['exchange_rate'],'symbol':obj['symbol'] if obj['symbol'] not in a_changer.keys() else a_changer[obj['symbol']]}for token,obj in cwl_optimism.items()}
+#{token:{'id':obj['id'], 'name':obj['name'],'symbol':obj['symbol'] if obj['symbol'] not in a_changer.keys() else a_changer[obj['symbol']], 'contract_address':obj['contract_address'], 'native_balance':obj['native_balance'], 'usd_balance':obj['usd_balance'], 'blockchain':obj['blockchain'], 'type':obj['type'], 'exchange_rate':obj['exchange_rate']}for token,obj in blockchain_result.items()}
 
   def fulfill_wallet(self):
     c = self.config
     parsed_quotes = self.parsed_quotes
     mes_wallets = {}
+    # patch : symbol à changer pour moi mais à l'avenir j'aimerais que les doublons puissent etre decidé pour chaque blockchain depuis une interface.
+    symbol_a_changer = {'VELO':'VELO_2'}
+    changement = lambda blockchain_result,symbol_a_changer: {token:{'id':obj['id'] if obj['id'] not in symbol_a_changer.keys() else symbol_a_changer[obj['id']], 'name':obj['name'],'symbol':obj['symbol'] , 'contract_address':obj['contract_address'], 'native_balance':obj['native_balance'], 'usd_balance':obj['usd_balance'], 'blockchain':obj['blockchain'], 'type':obj['type'], 'exchange_rate':obj['exchange_rate']}for token,obj in blockchain_result.items()}
     for wallet in c.svm_wallets:
       mon_wallet = Wallet.Tokens(wallet)
       mon_wallet.add_json_entries(solana.get_spl_tokens_balance_from_moralis(c.moralis_api_key,c.svm_wallets[wallet]))
       mon_wallet.add_json_entry(solana.get_sol_balance_from_moralis(c.moralis_api_key,c.svm_wallets[wallet]))
+      # un fake pyth casse mes stats. Je ne retire pas les scams des fois qu'ils pump sur un malentendu
       mon_wallet.remove_token_from_blockchain('PYTH','Solana')
-      #mon_wallet.update_all_missing_exchange_rate_via_parsed_quotes(parsed_quotes)
       mon_wallet.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
       mes_wallets.update({wallet:mon_wallet})
     for wallet in c.evm_wallets:
       mon_wallet = Wallet.Tokens(wallet)
+      # ici j'applique ce patch :-)
+      blockchain = optimism.get_tokens_balance_from_blockscout(c.evm_wallets[wallet])
+      print("apply changes to",wallet)
+      try:
+        blockchain = changement(blockchain,symbol_a_changer)
+      except:
+        print("failed:",wallet,blockchain)
+      mon_wallet.add_json_entries(blockchain)
+      mon_wallet.add_json_entries(arbitrum.get_tokens_balance_from_blockscout(c.evm_wallets[wallet]))
+      mon_wallet.add_json_entries(mantle.get_tokens_balance_from_blockscout(c.evm_wallets[wallet]))
+      mon_wallet.add_json_entries(base.get_tokens_balance_from_blockscout(c.evm_wallets[wallet]))
       mon_wallet.add_json_entry(arbitrum.get_native_balance_from_blockscout(c.evm_wallets[wallet]))
       mon_wallet.add_json_entry(optimism.get_native_balance_from_blockscout(c.evm_wallets[wallet]))
       mon_wallet.add_json_entry(mantle.get_native_balance_from_blockscout(c.evm_wallets[wallet]))
       mon_wallet.add_json_entry(base.get_native_balance_from_blockscout(c.evm_wallets[wallet]))
-      mon_wallet.add_json_entries(optimism.get_tokens_balance_from_blockscout(c.evm_wallets[wallet]))
-      mon_wallet.add_json_entries(arbitrum.get_tokens_balance_from_blockscout(c.evm_wallets[wallet]))
-      mon_wallet.add_json_entries(mantle.get_tokens_balance_from_blockscout(c.evm_wallets[wallet]))
-      mon_wallet.add_json_entries(base.get_tokens_balance_from_blockscout(c.evm_wallets[wallet]))
-      #mon_wallet.update_all_missing_exchange_rate_via_parsed_quotes(parsed_quotes)
       mon_wallet.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
       mes_wallets.update({wallet:mon_wallet})
 
       self.mes_wallets = mes_wallets
-
-#    scraper = Scraper.Scraper()
-#    #form btc entry from scrapping (temporary function)
-#    items = scraper.get_history()
-#    last_items = list(items.keys())[-1]
-#    for wallet in c.btc_wallets:
-#      btc = Token.Token({"id":"BTC","name":"Bitcoin","symbol":"BTC","native_balance":items[last_items][c.btc_wallets[wallet]],"type":"BTC","blockchain":"BTC"})
-#      mes_wallets.update({"BTC":btc})
-#    for wallet in c.egld_wallets:
-#      egld = Token.Token({"id":"EGLD","name":"Elrond","symbol":"EGLD","native_balance":items[last_items][c.egld_wallets[wallet]],"type":"EGLD","blockchain":"MULTIVERSX"})
-#      mes_wallets.update({"EGLD":egld})
-
-
+    # chargement de la partie remplie off chain(non prise en charge par les API comme les lock/stack etc.)
+    self.import_custom_wallets_from_json_file("custom_wallets_.json")
+    self.fusion_wallets_by_name_1_2_in_3('cwl','CWL','custom_cwl')
+    self.fusion_wallets_by_name_1_2_in_3('cwl','CWL','custom_cwl')
+    self.fusion_wallets_by_name_1_2_in_3('phantom_sol','PHANTOM_SOL','custom_phantom_sol')
+    self.fusion_wallets_by_name_1_2_in_3('binance_evm','BINANCE_EVM','custom_binance_evm')
+    self.fusion_wallets_by_name_1_2_in_3('bybit_evm','BYBIT_EVM','custom_bybit_evm')
+    self.fusion_wallets_by_name_1_2_in_3('coinbasewallet','COINBASEWALLET','custom_coinbasewallet')
 
   def launch_new_scrapping(self):
     scraper = Scraper.Scraper()
@@ -195,3 +205,38 @@ class WalletManager:
   def save_exported_wallets(self,filename="custom_wallets.json"):
     c = self.config
     c.save_to_file(filename,self.wallets_to_export)
+
+  def get_list_wallets(self):
+    return self.mes_wallets.keys()
+
+  def save_my_personal_wallets(self):
+    nom_wallet_cible = self.all_my_personnal_wallets
+    for name in nom_wallet_cible:
+      self.mes_wallets[name].name = name
+      self.export_custom_wallet_as_json(self.mes_wallets[name])
+    saved_wallets = self.save_exported_wallets("all_my_wallets.json")
+    return saved_wallets
+
+  def update_all_my_wallets(self):
+    # patch: je dois imaginer un truc plus generique mais c'est juste le temps de travailler sur les charts, flemme de faire les updates manunellement a chaque fois
+    parsed_quotes = self.parsed_quotes
+    nom_wallet_cible = self.all_my_personnal_wallets
+    for name in nom_wallet_cible:
+      self.mes_wallets[name].update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
+
+  def sum_all_wallets(self):
+    total = 0
+    total_by_tokens = self.get_global_summarized_tokens()
+    for token in total_by_tokens:
+      total += total_by_tokens[token]
+    return total
+
+  def get_total_by_wallet(self):
+    total_by_wallet = {}
+    for wallet in self.mes_wallets:
+      total_by_wallet.update({wallet:self.mes_wallets[wallet].sum_total_balance()})
+    return total_by_wallet
+
+
+
+

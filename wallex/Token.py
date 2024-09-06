@@ -47,7 +47,7 @@ class Token:
         self.name = entry['name']
         self.symbol = entry['symbol']
         self.native_balance = float(entry['native_balance'])
-        if "exchange_rate" in entry.keys():
+        if "exchange_rate" in entry.keys() and (isinstance(entry['exchange_rate'],float) or isinstance(entry['exchange_rate'],int) or len(entry['exchange_rate'])>0):
             self.exchange_rate = float(entry['exchange_rate'])
             self.usd_balance = self.exchange_rate * self.native_balance
             self.missing_exchange_rate = False
