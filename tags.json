@@ -1,1 +1,169 @@
-../wallex_common_data/tags.json
+{
+  "hold": {
+    "nom": "hold",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "BTC",
+      "ORANGEFI_WETH",
+      "MSOL",
+      "WSTETH",
+      "BTCB",
+      "WOO_WETH",
+      "SCROLL",
+      "JITOSOL",
+      "SOL",
+      "STONE",
+      "CBETH",
+      "ETH",
+      "WETH",
+      "BEEFY_CBETH_WETH",
+      "TON"
+    ]
+  },
+  "stablecoin": {
+    "nom": "stablecoin",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "BEEFY_USDC+_USD+",
+      "USDT",
+      "MAVERICK_USDT_USDC",
+      "USDC",
+      "BEEFY_USD+_FRAX_USDC",
+      "RDNT_USDT",
+      "SOLV_BTCB",
+      "AERODROME_USDC_USD+",
+      "KILOEX_USDT",
+      "DAI"
+    ]
+  },
+  "lpc": {
+    "nom": "lpc",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "BEEFY_USDC+_USD+",
+      "BEEFY_OVN_USD+",
+      "BEEFY_SONNE_USDC",
+      "BEEFY_USD+_FRAX_USDC",
+      "BEEFY_GMX"
+    ]
+  },
+  "lp": {
+    "nom": "lp",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "AERODROME_USDC_USD+",
+      "AERODROME_ETH_FBOMB"
+    ]
+  },
+  "locked": {
+    "nom": "locked",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "VELO_2",
+      "JUP",
+      "AERO",
+      "KILOEX_USDT"
+    ]
+  },
+  "farming": {
+    "nom": "farming",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "ORCA_JUP_USDC",
+      "MAVERICK_USDT_USDC",
+      "BEEFY_CBETH_WETH",
+      "WOO_WETH"
+    ]
+  },
+  "stacking": {
+    "nom": "stacking",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "ORANGEFI_WETH",
+      "WESTAKE_EGLD",
+      "ABR",
+      "THEGRAPH_GRT",
+      "SOLV_BTCB",
+      "WOO_WOO",
+      "ARBDOGE_AIDOGE",
+      "ETH",
+      "MANTLEREWARDSTATION_MNT"
+    ]
+  },
+  "token": {
+    "nom": "token",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "EGLD",
+      "DAI",
+      "USDT",
+      "MKR",
+      "USDC",
+      "BTCB",
+      "ZKJ",
+      "MATIC",
+      "STONE",
+      "BNB",
+      "VOXEL",
+      "AVAX"
+    ]
+  },
+  "notscraped": {
+    "nom": "notscraped",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "PEPE",
+      "ORCA_JUP_USDC",
+      "USDT",
+      "APE",
+      "JUP",
+      "MATIC",
+      "PIP",
+      "NOT",
+      "TON"
+    ]
+  },
+  "cex": {
+    "nom": "cex",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "PEPE",
+      "USDT",
+      "APE",
+      "MATIC",
+      "PIP",
+      "TON"
+    ]
+  },
+  "lending": {
+    "nom": "lending",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "RDNT_USDT"
+    ]
+  },
+  "beefy": {
+    "nom": "beefy",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "BEEFY_USDC+_USD+",
+      "BEEFY_OVN_USD+",
+      "BEEFY_SONNE_USDC",
+      "BEEFY_USD+_FRAX_USDC",
+      "BEEFY_GMX",
+      "BEEFY_CBETH_WETH"
+    ]
+  }
+}
