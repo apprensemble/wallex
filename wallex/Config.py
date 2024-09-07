@@ -21,6 +21,7 @@ class Config:
         self.btc_wallets = config_file['public_keys']['btc']
         self.svm_main_symbols = config_file['infos_globale']['main_svm_symbols']
         self.evm_main_symbols = config_file['infos_globale']['main_evm_symbols']
+        self.home_data = config_file['infos_globale']['home_data']
 
         self.cmc = Cmc.Cmc(self.cmc_file,self.cmc_api_key)
 
