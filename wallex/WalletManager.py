@@ -12,7 +12,7 @@ class WalletManager:
     self.parsed_quotes = self.config.cmc.get_parsed_quotes(False)
     self.wallets_to_export = {}
     #patch: il faut que j'externalise les truc perso
-    self.all_my_personnal_wallets = ['binance_sol', 'bybit_sol', 'cwsol', 'TELEGRAM', 'BITGET', 'CWDCA','EGLD', 'custom_cwl', 'custom_phantom_sol','custom_binance_evm', 'custom_bybit_evm', 'custom_coinbasewallet']
+    self.all_my_personnal_wallets = ['binance_sol', 'bybit_sol', 'cwsol', 'TELEGRAM', 'BITGET', 'CWDCA','EGLD', 'custom_cwl', 'custom_phantom_sol','custom_binance_evm', 'custom_bybit_evm', 'custom_coinbasewallet','KEPLR','ARGENTX','SUBWALLET']
 
   def add_cwl(self):
     c = self.config
@@ -42,7 +42,7 @@ class WalletManager:
 # Note pour plus tard penser à faire une fonction de remplacement du symbol lorsque l'on souhaite le moins populaire.
 # certainenement à faire par blockchain et par wallet. Depuis le fichier de config ou un autre.
 # exemple : 
-# a_changer = {'VELO':'VELO_2', 'WBTC':'WBTC_2'}
+# a_changer = {'VELO':'VELO2', 'WBTC':'WBTC2'}
 #{token:{'id':obj['id'], 'name':obj['name'], 'contract_address':obj['contract_address'], 'native_balance':obj['native_balance'], 'usd_balance':obj['usd_balance'], 'blockchain':obj['blockchain'], 'type':obj['type'], 'exchange_rate':obj['exchange_rate'],'symbol':obj['symbol'] if obj['symbol'] not in a_changer.keys() else a_changer[obj['symbol']]}for token,obj in cwl_optimism.items()}
 #{token:{'id':obj['id'], 'name':obj['name'],'symbol':obj['symbol'] if obj['symbol'] not in a_changer.keys() else a_changer[obj['symbol']], 'contract_address':obj['contract_address'], 'native_balance':obj['native_balance'], 'usd_balance':obj['usd_balance'], 'blockchain':obj['blockchain'], 'type':obj['type'], 'exchange_rate':obj['exchange_rate']}for token,obj in blockchain_result.items()}
 
@@ -51,7 +51,7 @@ class WalletManager:
     parsed_quotes = self.parsed_quotes
     mes_wallets = {}
     # patch : symbol à changer pour moi mais à l'avenir j'aimerais que les doublons puissent etre decidé pour chaque blockchain depuis une interface.
-    symbol_a_changer = {'VELO':'VELO_2'}
+    symbol_a_changer = {'VELO':'VELO2'}
     changement = lambda blockchain_result,symbol_a_changer: {token:{'id':obj['id'] if obj['id'] not in symbol_a_changer.keys() else symbol_a_changer[obj['id']], 'name':obj['name'],'symbol':obj['symbol'] , 'contract_address':obj['contract_address'], 'native_balance':obj['native_balance'], 'usd_balance':obj['usd_balance'], 'blockchain':obj['blockchain'], 'type':obj['type'], 'exchange_rate':obj['exchange_rate']}for token,obj in blockchain_result.items()}
     for wallet in c.svm_wallets:
       mon_wallet = Wallet.Tokens(wallet)

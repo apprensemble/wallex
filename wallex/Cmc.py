@@ -89,7 +89,7 @@ class Cmc:
                 occurences += parsed_quotes[symbol]['occurences']
                 parsed_quotes[symbol]['occurences'] = occurences
                 parsed_quotes[symbol]['doublons'] = True
-                symbol = symbol+"_"+str(occurences)
+                symbol = symbol+str(occurences)
             try:
                 exchange_rate = float(d['quote']['USD']['price'])
             except TypeError as te:

@@ -1,6 +1,23 @@
 from requests import Session
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
 
+def convert_entry_from_decimals(entry):
+  return int(entry['value']) * 10**-int(entry['token']['decimals'])
+
+def parse_native_response_from_blockscout(rjson):
+  entry = {
+    'id': "ETH",
+    'symbol': "ETH",
+    'name': "Ethereum",
+    'native_balance': 0.0,
+    'blockchain': "arbitrum".capitalize(),
+    'decimals': 18,
+    'type': "EVM"
+  }
+  to_convert = { 'value':rjson['result'],'token':{'decimals':18}}
+  entry['native_balance'] = convert_entry_from_decimals(to_convert)
+  return entry
+
 def get_tokens_balance_from_blockscout(account) -> dict:
   resultat = {}
   url_suffixe = "/addresses/"+account+"/token-balances"
@@ -17,12 +34,13 @@ def get_tokens_balance_from_blockscout(account) -> dict:
   return resultat
 
 def get_native_balance_from_blockscout(account) -> dict:
-  entry = {
-    'id': "ARB",
-    'symbol': "ARB",
-    'name': "Arbitrum",
+
+  entry ={ 'id': "ETH",
+    'symbol': "ETH",
+    'name': "Ethereum",
     'native_balance': 0.0,
-    'blockchain': "Arbitrum",
+    'blockchain': "arbitrum".capitalize(),
+    'decimals': 18,
     'type': "EVM"
   }
   url = "https://arbitrum.blockscout.com/api"
@@ -36,7 +54,7 @@ def get_native_balance_from_blockscout(account) -> dict:
   }
   rjson =  get_with_parameters(url,parameters,headers)
   if rjson['message'] == "OK":
-    entry['native_balance'] = int(rjson['result']) * 10**-18
+    entry = parse_native_response_from_blockscout(rjson)
   return entry
 
 def get_with_parameters(url,parameters,headers):
@@ -49,9 +67,6 @@ def get_with_parameters(url,parameters,headers):
   except (ConnectionError, Timeout, TooManyRedirects) as e:
     print(e)
   return response.json()
-
-def convert_entry_from_decimals(entry):
-  return int(entry['value']) * 10**-int(entry['token']['decimals'])
 
 def parse_response_from_blockscout(rjson):
   entries = {}
@@ -66,8 +81,8 @@ def parse_response_from_blockscout(rjson):
         'symbol': entry['token']['symbol'],
         'contract_address': entry['token']['address'],
         'native_balance': native_balance,
-        'usd_balance': usd_balance,
-        'blockchain': "Arbitrum",
+        'usd_balance': round(usd_balance,2),
+        'blockchain': "arbitrum".capitalize(),
         'type': "EVM",
         'exchange_rate': float(entry['token']['exchange_rate'])
       }

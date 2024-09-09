@@ -44,6 +44,7 @@ read
 
 #make lib
 sed "s#$old_url#$new_url#g" $old_lib_file > $new_lib_file
+sed "s#$old_lib#$new_lib#g" $old_lib_file > $new_lib_file
 
 #make test lib
 sed "s#$old_lib#$new_lib#g" $old_test_file > $new_test_file
