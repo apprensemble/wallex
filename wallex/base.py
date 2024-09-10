@@ -91,7 +91,7 @@ def parse_response_from_blockscout(rjson):
       }
       #print(entries[id]['symbol']," : ",entries[id]['usd_balance'])
     elif entry['token']['decimals']:
-      continue     
+      continue
       # je n'ajoute plus les elements sans exchange_rate car ce sont souvent des scams
       id = entry['token']['symbol']
       native_balance = convert_entry_from_decimals(entry)

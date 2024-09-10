@@ -25,6 +25,33 @@ Pour ce faire il y a:
 * Interface web : pour faire ses custom wallet et suivre plus facilement ses wallets
 * Interface mobile: pourquoi pas?
 
+## APIs
+
+Les apis utilisées actuellement sont CMC pour les quotes, Moralis pour Solana et Blockscout pour le reste.
+
+J'ai l'intention d'utiliser Zerion à la place car il semble prendre en charge plus de blockchain et surtout les placements sur beefy & co(stacking,vesting, etc.)
+
+à retenir sur zerion:
+
+* prise en charge token: 
+
+```code
+jq -r '.data[] | "\(.relationships.chain.data.id) \(.attributes.fungible_info.symbol) \"\(.attributes.fungible_info.name)\" \(.attributes.value)"' zerion.json
+```
+```python
+# affiche chaque token
+{token['relationships']['chain']['data']['id']+"_"+token['attributes']['fungible_info']['symbol']:{'symbol':token['attributes']['fungible_info']['symbol'],'name':token['attributes']['fungible_info']['name'],'usd_balance':token['attributes']['value']} for token in zerion}
+# affiche la liste des blockchain
+{token['relationships']['chain']['data']['id'] for token in zerion}
+
+# je mes resultat de la requete zrion['data'] dans zerion puis calcul le total
+total = 0
+total = sum(float(token['attributes']['value'] if token['attributes']['value'] else 0) for token in zerion)
+#total par blockchain
+lambda blockchain : sum(float(token['attributes']['value'] if token['attributes']['value'] and token['relationships']['chain']['data']['id'] == blockchain else 0) for token in zerion)
+```
+
+
 ## Fichiers de configurations:
 
 ### extra_positions.txt
