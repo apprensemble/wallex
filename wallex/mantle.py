@@ -21,7 +21,7 @@ def parse_native_response_from_blockscout(rjson):
 def get_tokens_balance_from_blockscout(account) -> dict:
   resultat = {}
   url_suffixe = "/addresses/"+account+"/token-balances"
-  url = "https://mantle.blockscout.com/api/v2" + url_suffixe
+  url = "https://explorer.mantle.xyz/api/v2" + url_suffixe
   parameters = {
   }
   headers = {
@@ -43,7 +43,7 @@ def get_native_balance_from_blockscout(account) -> dict:
     'decimals': 18,
     'type': "EVM"
   }
-  url = "https://mantle.blockscout.com/api"
+  url = "https://explorer.mantle.xyz/api"
   parameters = {
     'module':'account',
     'action': 'balance',
@@ -66,7 +66,10 @@ def get_with_parameters(url,parameters,headers):
     response = session.get(url, params=parameters)
   except (ConnectionError, Timeout, TooManyRedirects) as e:
     print(e)
-  return response.json()
+  try:
+    return response.json()
+  except:
+    return {}
 
 def parse_response_from_blockscout(rjson):
   entries = {}

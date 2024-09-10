@@ -66,7 +66,10 @@ def get_with_parameters(url,parameters,headers):
     response = session.get(url, params=parameters)
   except (ConnectionError, Timeout, TooManyRedirects) as e:
     print(e)
-  return response.json()
+  try:
+    return response.json()
+  except:
+    return {}
 
 def parse_response_from_blockscout(rjson):
   entries = {}
