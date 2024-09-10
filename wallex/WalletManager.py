@@ -1,5 +1,4 @@
-from wallex import Token,solana,Wallet,base,Config, optimism, arbitrum, mantle,Scraper
-import json
+from wallex import Token,solana,Wallet,Config,Scraper,zerion,mantle
 
 class WalletManager:
   mes_wallets: dict[str:Wallet.Tokens]
@@ -14,28 +13,16 @@ class WalletManager:
     #patch: il faut que j'externalise les truc perso
     self.all_my_personnal_wallets = ['binance_sol', 'bybit_sol', 'cwsol', 'TELEGRAM', 'BITGET', 'CWDCA','EGLD', 'custom_cwl', 'custom_phantom_sol','custom_binance_evm', 'custom_bybit_evm', 'custom_coinbasewallet','KEPLR','ARGENTX','SUBWALLET']
 
-  def add_cwl(self):
-    c = self.config
-    parsed_quotes = self.parsed_quotes
-    cwl_base = base.get_tokens_balance_from_blockscout(c.evm_wallets['cwl'])
-    cwl_optimism = optimism.get_tokens_balance_from_blockscout(c.evm_wallets['cwl'])
-    cwl_arbitrum = arbitrum.get_tokens_balance_from_blockscout(c.evm_wallets['cwl'])
-    cwl_mantle = mantle.get_tokens_balance_from_blockscout(c.evm_wallets['cwl'])
-    cwl_base_native =base.get_native_balance_from_blockscout(c.evm_wallets['cwl'])
-    cwl_optimism_native = optimism.get_native_balance_from_blockscout(c.evm_wallets['cwl'])
-    cwl_arbitrum_native = arbitrum.get_native_balance_from_blockscout(c.evm_wallets['cwl'])
-    cwl_mantle_native = mantle.get_native_balance_from_blockscout(c.evm_wallets['cwl'])
+  def call_refresh_quotes(self):
+    self.parsed_quotes = self.config.cmc.get_parsed_quotes(True)
 
-    mon_wallet = Wallet.Tokens()
-    mon_wallet.add_json_entry(cwl_base_native)
-    mon_wallet.add_json_entry(cwl_optimism_native)
-    mon_wallet.add_json_entry(cwl_arbitrum_native)
-    mon_wallet.add_json_entry(cwl_mantle_native)
-    mon_wallet.add_json_entries(cwl_base)
-    mon_wallet.add_json_entries(cwl_optimism)
-    mon_wallet.add_json_entries(cwl_arbitrum)
-    mon_wallet.add_json_entries(cwl_mantle)
-    mon_wallet.name = "cwl"
+  def add_wallet(self,account,name,refresh_quotes=False):
+    if refresh_quotes:
+      self.call_refresh_quotes()
+    parsed_quotes = self.parsed_quotes
+
+    mon_wallet = zerion.get_evm_wallet(account)
+    mon_wallet.name = name
     mon_wallet.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
     self.mes_wallets.update({mon_wallet.name:mon_wallet})
 
@@ -46,8 +33,10 @@ class WalletManager:
 #{token:{'id':obj['id'], 'name':obj['name'], 'contract_address':obj['contract_address'], 'native_balance':obj['native_balance'], 'usd_balance':obj['usd_balance'], 'blockchain':obj['blockchain'], 'type':obj['type'], 'exchange_rate':obj['exchange_rate'],'symbol':obj['symbol'] if obj['symbol'] not in a_changer.keys() else a_changer[obj['symbol']]}for token,obj in cwl_optimism.items()}
 #{token:{'id':obj['id'], 'name':obj['name'],'symbol':obj['symbol'] if obj['symbol'] not in a_changer.keys() else a_changer[obj['symbol']], 'contract_address':obj['contract_address'], 'native_balance':obj['native_balance'], 'usd_balance':obj['usd_balance'], 'blockchain':obj['blockchain'], 'type':obj['type'], 'exchange_rate':obj['exchange_rate']}for token,obj in blockchain_result.items()}
 
-  def fulfill_wallet(self):
+  def fulfill_wallet_manager(self,refresh_quotes=False):
     c = self.config
+    if refresh_quotes:
+      self.call_refresh_quotes()
     parsed_quotes = self.parsed_quotes
     mes_wallets = {}
     # patch : symbol à changer pour moi mais à l'avenir j'aimerais que les doublons puissent etre decidé pour chaque blockchain depuis une interface.
@@ -62,22 +51,12 @@ class WalletManager:
       mon_wallet.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
       mes_wallets.update({wallet:mon_wallet})
     for wallet in c.evm_wallets:
-      mon_wallet = Wallet.Tokens(wallet)
-      # ici j'applique ce patch :-)
-      blockchain = optimism.get_tokens_balance_from_blockscout(c.evm_wallets[wallet])
-      print("apply changes to",wallet)
-      try:
-        blockchain = changement(blockchain,symbol_a_changer)
-      except:
-        print("failed:",wallet,blockchain)
-      mon_wallet.add_json_entries(blockchain)
-      mon_wallet.add_json_entries(arbitrum.get_tokens_balance_from_blockscout(c.evm_wallets[wallet]))
-      mon_wallet.add_json_entries(mantle.get_tokens_balance_from_blockscout(c.evm_wallets[wallet]))
-      mon_wallet.add_json_entries(base.get_tokens_balance_from_blockscout(c.evm_wallets[wallet]))
-      mon_wallet.add_json_entry(arbitrum.get_native_balance_from_blockscout(c.evm_wallets[wallet]))
-      mon_wallet.add_json_entry(optimism.get_native_balance_from_blockscout(c.evm_wallets[wallet]))
-      mon_wallet.add_json_entry(mantle.get_native_balance_from_blockscout(c.evm_wallets[wallet]))
-      mon_wallet.add_json_entry(base.get_native_balance_from_blockscout(c.evm_wallets[wallet]))
+      mon_wallet = zerion.get_evm_wallet(c.evm_wallets[wallet],refresh_quotes)
+      mon_wallet.name = wallet
+      if 'Mantle' not in mon_wallet.entries.keys():
+        mon_wallet.add_json_entry(mantle.get_native_balance_from_blockscout(c.evm_wallets[wallet]))
+        mon_wallet.add_json_entries(mantle.get_tokens_balance_from_blockscout(c.evm_wallets[wallet]))
+
       mon_wallet.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
       mes_wallets.update({wallet:mon_wallet})
 

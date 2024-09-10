@@ -1,0 +1,86 @@
+from requests import Session
+from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
+from wallex import Config,Wallet
+import os.path
+
+c = Config.Config()
+zerion_api_key = c.zerion_api_key
+# fichier de stockage en attendant une bdd( pour reduire les appels)
+
+def get_with_parameters(url,parameters,headers):
+
+  session = Session()
+  session.headers.update(headers)
+
+  try:
+    response = session.get(url, params=parameters)
+  except (ConnectionError, Timeout, TooManyRedirects) as e:
+    print(e)
+  try:
+    return response.json()
+  except:
+    print(response)
+    print(response.json()['errors'])
+    return {}
+
+def parse_response_and_return_wallet(rjson):
+  mon_wallet = Wallet.Tokens()
+  for token in rjson:
+    try:
+      exchange_rate = float(token['attributes']['price'])
+      native_balance = float(token['attributes']['quantity']['float'])
+      if exchange_rate > 0:
+        usd_balance = round(float(token['attributes']['value']),2)
+      else:
+        usd_balance = 0.0
+      blockchain = token['relationships']['chain']['data']['id']
+      symbol = token['attributes']['fungible_info']['symbol'] 
+      name = token['attributes']['fungible_info']['name']
+      # AVAX et WAVAX ont le symbol AVAX sur zerion
+      if blockchain.capitalize() == 'Binance-smart-chain':
+        blockchain = "BNB"
+      if name == 'Wrapped AVAX':
+        symbol = "WAVAX"
+      if name.find("ApeSwap") > -1:
+        symbol = "BANANA2"
+      entry = {
+        'id': symbol,
+        'name': name,
+        'symbol': symbol,
+        'contract_address': token['id'].split("-")[0],
+        'native_balance': native_balance,
+        'usd_balance': usd_balance,
+        'blockchain': blockchain.capitalize(),
+        'type': "EVM",
+        'exchange_rate': exchange_rate
+      }
+      mon_wallet.add_json_entry(entry)
+    except Exception as e:
+      print(token['attributes']['fungible_info']['symbol'],e)
+      continue
+  return mon_wallet
+
+def get_evm_wallet(account,refresh=False):
+  refresh_file = "zerion_"+account
+  resultat = {}
+  url_suffixe = account+"/positions/?filter[positions]=only_simple&currency=usd&filter[trash]=only_non_trash&sort=value"
+  url = "https://api.zerion.io/v1/wallets/" + url_suffixe
+  parameters = {
+  }
+  headers = {
+    'Accepts': 'application/json',
+    "authorization": "Basic "+zerion_api_key
+  }
+  if refresh:
+    rjson =  get_with_parameters(url,parameters,headers)
+    if 'data' in rjson:
+      c.save_to_file(refresh_file,rjson)
+  elif os.path.isfile(refresh_file):
+    rjson = c.load_file(refresh_file)
+  else:
+    rjson =  get_with_parameters(url,parameters,headers)
+    if 'data' in rjson:
+      c.save_to_file(refresh_file,rjson)
+  resultat = parse_response_and_return_wallet(rjson['data'])
+  return resultat
+

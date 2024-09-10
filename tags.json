@@ -4,20 +4,55 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "MSOL",
+      "BTC",
+      "BTCB",
       "SOL",
+      "MSOL",
       "JITOSOL",
       "ETH",
-      "CBETH",
       "WETH",
-      "WOO_WETH",
       "STONE",
-      "WSTETH",
-      "BEEFY_CBETH_WETH",
+      "WOO_WETH",
+      "CBETH",
       "ORANGEFI_WETH",
-      "BTCB",
-      "BTC",
+      "BEEFY_CBETH_WETH",
+      "WSTETH",
       "TON"
+    ]
+  },
+  "BTC": {
+    "nom": "famille_BTC",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "BTC",
+      "BTCB",
+      "SOLV_BTCB"
+    ]
+  },
+  "ETH": {
+    "nom": "famille_ETH",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "ETH",
+      "WETH",
+      "STONE",
+      "WOO_WETH",
+      "CBETH",
+      "ORANGEFI_WETH",
+      "BEEFY_CBETH_WETH",
+      "WSTETH"
+    ]
+  },
+  "SOL": {
+    "nom": "famille_SOL",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "SOL",
+      "MSOL",
+      "JITOSOL"
     ]
   },
   "stablecoin": {
@@ -25,15 +60,15 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "KILOEX_USDT",
-      "BEEFY_USDC+_USD+",
+      "USDT",
+      "DAI",
+      "USDC",
       "AERODROME_USDC_USD+",
+      "BEEFY_USDC+_USD+",
+      "KILOEX_USDT",
       "MAVERICK_USDT_USDC",
       "RDNT_USDT",
-      "DAI",
-      "BEEFY_USD+_FRAX_USDC",
-      "USDT",
-      "USDC"
+      "BEEFY_USD+_FRAX_USDC"
     ]
   },
   "lpc": {
@@ -41,11 +76,11 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "BEEFY_OVN_USD+",
+      "BEEFY_GMX",
+      "BEEFY_USDC+_USD+",
       "BEEFY_SONNE_USDC",
       "BEEFY_USD+_FRAX_USDC",
-      "BEEFY_GMX",
-      "BEEFY_USDC+_USD+"
+      "BEEFY_OVN_USD+"
     ]
   },
   "lp": {
@@ -62,12 +97,13 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "KILOEX_USDT",
-      "JUP",
-      "JUPITER_JUP",
       "AERODROME_AERO",
-      "VELODROME_VELO2",
+      "JUP",
       "VELO2",
+      "FXB20551231",
+      "JUPITER_JUP",
+      "KILOEX_USDT",
+      "VELODROME_VELO2",
       "AERO"
     ]
   },
@@ -76,10 +112,10 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "ORCA_JUP_USDC",
       "WOO_WETH",
       "BEEFY_CBETH_WETH",
-      "MAVERICK_USDT_USDC"
+      "MAVERICK_USDT_USDC",
+      "ORCA_JUP_USDC"
     ]
   },
   "stacking": {
@@ -87,15 +123,16 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "WOO_WOO",
-      "ORANGEFI_WETH",
       "ETH",
-      "SOLV_BTCB",
+      "WESTAKE_EGLD",
       "MANTLEREWARDSTATION_MNT",
+      "WOO_WOO",
       "ARBDOGE_AIDOGE",
-      "THEGRAPH_GRT",
       "ABR",
-      "WESTAKE_EGLD"
+      "THEGRAPH_GRT",
+      "WFTM",
+      "ORANGEFI_WETH",
+      "SOLV_BTCB"
     ]
   },
   "token": {
@@ -103,22 +140,23 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "ZKJ",
-      "EGLD",
-      "VOXEL",
-      "VARA",
+      "FRXETH",
+      "STONE",
       "ETH",
       "USDT",
-      "ATOM",
-      "BNB",
-      "MKR",
-      "DOT",
       "DAI",
+      "ZKJ",
+      "MKR",
+      "BNB",
+      "USDC",
+      "VARA",
+      "VOXEL",
+      "EGLD",
+      "ATOM",
       "MATIC",
       "AVAX",
       "BTCB",
-      "STONE",
-      "USDC"
+      "DOT"
     ]
   },
   "notscraped": {
@@ -126,16 +164,16 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "ORCA_JUP_USDC",
-      "PIP",
-      "PEPE",
-      "APE",
-      "JUP",
-      "JUPITER_JUP",
-      "MATIC",
+      "NOT",
       "USDT",
+      "PIP",
+      "APE",
       "TON",
-      "NOT"
+      "PEPE",
+      "MATIC",
+      "JUPITER_JUP",
+      "ORCA_JUP_USDC",
+      "JUP"
     ]
   },
   "cex": {
@@ -143,12 +181,12 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "PIP",
-      "PEPE",
-      "APE",
-      "MATIC",
       "USDT",
-      "TON"
+      "PIP",
+      "APE",
+      "TON",
+      "PEPE",
+      "MATIC"
     ]
   },
   "lending": {
@@ -164,12 +202,12 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "BEEFY_OVN_USD+",
-      "BEEFY_SONNE_USDC",
-      "BEEFY_USD+_FRAX_USDC",
-      "BEEFY_CBETH_WETH",
       "BEEFY_GMX",
-      "BEEFY_USDC+_USD+"
+      "BEEFY_USDC+_USD+",
+      "BEEFY_SONNE_USDC",
+      "BEEFY_CBETH_WETH",
+      "BEEFY_USD+_FRAX_USDC",
+      "BEEFY_OVN_USD+"
     ]
   }
 }
