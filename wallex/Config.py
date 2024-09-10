@@ -15,6 +15,7 @@ class Config:
         self.cmc_file = config_file['infos_globale']['cmc_file']
         self.cmc_api_key = config_file['private_keys']['cmc_api_key']
         self.moralis_api_key = config_file['private_keys']['moralis_api_key']
+        self.zerion_api_key = config_file['private_keys']['zerion_api_key']
         self.evm_wallets = config_file['public_keys']['evm']
         self.svm_wallets = config_file['public_keys']['svm']
         self.egld_wallets = config_file['public_keys']['egld']

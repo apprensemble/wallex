@@ -49,6 +49,8 @@ total = 0
 total = sum(float(token['attributes']['value'] if token['attributes']['value'] else 0) for token in zerion)
 #total par blockchain
 lambda blockchain : sum(float(token['attributes']['value'] if token['attributes']['value'] and token['relationships']['chain']['data']['id'] == blockchain else 0) for token in zerion)
+# total d'un token
+lambda token_symbol : sum(float(token['attributes']['value'] if token['attributes']['value'] and token['attributes']['fungible_info']['symbol'] == token_symbol else 0) for token in zerion)
 ```
 
 
