@@ -1,10 +1,12 @@
-from wallex import Token,solana,Wallet,Config,Scraper,zerion,mantle
+from wallex import Token,solana,Wallet,Config,Scraper,zerion,mantle,Logger
 
 class WalletManager:
   mes_wallets: dict[str:Wallet.Tokens]
   tags: dict
 
   def __init__(self) -> None:
+    history_file = "hf_api.json"
+    self.history = Logger.Logger(history_file)
     self.config = Config.Config()
     self.mes_wallets = {}
     self.tags = self.config.load_file("tags.json")
@@ -104,6 +106,24 @@ class WalletManager:
     sums = dict(sorted(sums.items(), key=lambda item: item[1],reverse=True))
     return sums
 
+  def get_tokens_by_blockchain(self):
+    resultat = {}
+    for wallet in self.mes_wallets:
+      w = self.mes_wallets[wallet].get_detailled_balance_by_blockchain()
+      for bc in w:
+        for wbc in w[bc]:
+          for token in wbc:
+            if bc in resultat and token in resultat[bc]:
+              resultat[bc][token] += wbc[token]
+            elif bc in resultat:
+              resultat[bc][token] = wbc[token]
+            else:
+              resultat[bc] = {}
+              resultat[bc][token] = wbc[token]
+            rbc = resultat[bc]
+            resultat[bc] = dict(sorted(rbc.items(), key=lambda item: item[1],reverse=True))
+    return resultat
+
   def get_tokens_by_strategie(self,strategie):
     resultat = {} 
     sum = self.get_global_summarized_tokens()
@@ -196,8 +216,10 @@ class WalletManager:
     saved_wallets = self.save_exported_wallets("all_my_wallets.json")
     return saved_wallets
 
-  def update_all_my_wallets(self):
+  def update_all_my_wallets(self,refresh_quotes=False):
     # patch: je dois imaginer un truc plus generique mais c'est juste le temps de travailler sur les charts, flemme de faire les updates manunellement a chaque fois
+    if refresh_quotes:
+      self.call_refresh_quotes()
     parsed_quotes = self.parsed_quotes
     nom_wallet_cible = self.all_my_personnal_wallets
     for name in nom_wallet_cible:
@@ -210,12 +232,67 @@ class WalletManager:
       total += total_by_tokens[token]
     return total
 
-  def get_total_by_wallet(self):
+  def get_total_by_wallet(self,write_hitory=False):
     total_by_wallet = {}
     for wallet in self.mes_wallets:
       total_by_wallet.update({wallet:self.mes_wallets[wallet].sum_total_balance()})
+      if write_hitory:
+        self.history.add_content({wallet:self.mes_wallets[wallet].sum_total_balance()})
     return total_by_wallet
 
+  def remove_token_from_wallet_in_blockchain(self,token,wallet,blockchain):
+    try:
+      mon_wallet = self.mes_wallets[wallet]
+      mon_wallet.remove_token_from_blockchain(token,blockchain)
+    except Exception as e:
+      print(e)
 
+  def get_flexible_yield(self):
+    flexible_yield = {}
+    for s in ["lp","lpc","farming","stacking","lending"]:
+      flexible_yield.update({s:sum(self.get_tokens_by_strategie(s).values())})
+    return flexible_yield
+
+
+  def get_portfolio_composition_by_type(self):
+    tokens_suivi = []
+    hold = sum(self.get_tokens_by_strategie("hold").values())
+    tokens_suivi.extend(list(self.get_tokens_by_strategie("hold").keys()))
+    flexible_yield = 0
+    for s in self.get_flexible_yield().keys():
+      categories = self.get_tokens_by_strategie(s)
+      flexible_yield +=  sum(categories.values())
+      tokens_suivi.extend(list(categories.keys()))
+    step = self.get_tokens_by_strategie("locked")
+    locked = sum(step.values())
+    tokens_suivi.extend(list(step.keys()))
+    step = self.get_tokens_by_strategie("stablecoin")
+    stablecoin = sum(step.values())
+    tokens_suivi.extend(list(step.keys()))
+    # est consideré non suivi ce qui n'est dans aucune des categories au dessus
+    non_suivi = 0
+    all_tokens = self.get_global_summarized_tokens()
+    for token in all_tokens:
+      if token not in tokens_suivi:
+        non_suivi += all_tokens[token]
+    resultat = {'hold':hold,'flexible_yield':flexible_yield,'locked':locked,'stablecoin':stablecoin,'non_suvi':round(non_suivi,2)}
+    return resultat
+
+  def get_tokens_non_suivi(self):
+    # liste des tokens suivis
+    lts = []
+    tokens_non_suivi = {}
+    # la famille des tokens suivis est hold, locked, stablecoin et flexible yield.
+    for f in ['hold','flexible_yield','locked','all_stablecoin']:
+      if f == 'flexible_yield':
+        for g in list(self.get_flexible_yield().keys()):
+          lts.extend(list(self.get_tokens_by_strategie(g).keys()))
+      else:
+        lts.extend(list(self.get_tokens_by_strategie(f).keys()))
+    all_tokens = self.get_global_summarized_tokens()
+    for token in all_tokens:
+      if token not in lts:
+        tokens_non_suivi[token] = all_tokens[token]
+    return tokens_non_suivi
 
 

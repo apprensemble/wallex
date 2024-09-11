@@ -4,24 +4,27 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "BTC",
-      "BTCB",
-      "SOL",
-      "MSOL",
-      "JITOSOL",
-      "ETH",
-      "WETH",
       "STONE",
-      "WOO_WETH",
-      "CBETH",
+      "TON",
       "ORANGEFI_WETH",
+      "BTC",
       "BEEFY_CBETH_WETH",
+      "BTCB",
+      "RESERVEPROTOCOL_CBETH_WSTETH",
+      "WOO_WETH",
+      "StakeStone Ether",
       "WSTETH",
-      "TON"
+      "WETH",
+      "SOL",
+      "CBETH",
+      "ETH",
+      "MSOL",
+      "JLP",
+      "JITOSOL"
     ]
   },
   "BTC": {
-    "nom": "famille_BTC",
+    "nom": "BTC",
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
@@ -30,23 +33,51 @@
       "SOLV_BTCB"
     ]
   },
+  "JLP": {
+    "nom": "JLP",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "JLP"
+    ]
+  },
+  "JUP": {
+    "nom": "JUP",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "JUP",
+      "JUPITER_JUP"
+    ]
+  },
+  "TON": {
+    "nom": "TON",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "TON"
+    ]
+  },
   "ETH": {
-    "nom": "famille_ETH",
+    "nom": "ETH",
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
       "ETH",
-      "WETH",
       "STONE",
-      "WOO_WETH",
-      "CBETH",
       "ORANGEFI_WETH",
+      "FRXETH",
       "BEEFY_CBETH_WETH",
-      "WSTETH"
+      "WOO_WETH",
+      "StakeStone Ether",
+      "RESERVEPROTOCOL_CBETH_WSTETH",
+      "WSTETH",
+      "WETH",
+      "CBETH"
     ]
   },
   "SOL": {
-    "nom": "famille_SOL",
+    "nom": "SOL",
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
@@ -55,20 +86,42 @@
       "JITOSOL"
     ]
   },
+  "all_stablecoin": {
+    "nom": "stablecoin",
+    "kind": "strategie",
+    "description": "blabla",
+    "tokens": [
+      "MAVERICK_USDT_USDC",
+      "BEEFY_USDC+_USD+",
+      "KILOEX_USDT",
+      "AERODROME_USDC_USD+",
+      "BEEFY_USD+_FRAX_USDC",
+      "RDNT_USDT",
+      "USDT",
+      "USDC",
+      "SUSD",
+      "AXLUSD",
+      "DAI",
+      "DAI+",
+      "FRAX",
+      "USD+",
+      "USDC+"
+    ]
+  },
   "stablecoin": {
     "nom": "stablecoin",
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
       "USDT",
-      "DAI",
       "USDC",
-      "AERODROME_USDC_USD+",
-      "BEEFY_USDC+_USD+",
-      "KILOEX_USDT",
-      "MAVERICK_USDT_USDC",
-      "RDNT_USDT",
-      "BEEFY_USD+_FRAX_USDC"
+      "SUSD",
+      "AXLUSD",
+      "DAI",
+      "DAI+",
+      "FRAX",
+      "USD+",
+      "USDC+"
     ]
   },
   "lpc": {
@@ -76,11 +129,11 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "BEEFY_GMX",
       "BEEFY_USDC+_USD+",
+      "BEEFY_GMX",
+      "BEEFY_OVN_USD+",
       "BEEFY_SONNE_USDC",
-      "BEEFY_USD+_FRAX_USDC",
-      "BEEFY_OVN_USD+"
+      "BEEFY_USD+_FRAX_USDC"
     ]
   },
   "lp": {
@@ -97,14 +150,14 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "AERODROME_AERO",
+      "AERO",
       "JUP",
-      "VELO2",
-      "FXB20551231",
-      "JUPITER_JUP",
-      "KILOEX_USDT",
       "VELODROME_VELO2",
-      "AERO"
+      "AERODROME_AERO",
+      "VELO2",
+      "KILOEX_USDT",
+      "JUPITER_JUP",
+      "FXB20551231"
     ]
   },
   "farming": {
@@ -112,10 +165,10 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "WOO_WETH",
-      "BEEFY_CBETH_WETH",
+      "ORCA_JUP_USDC",
       "MAVERICK_USDT_USDC",
-      "ORCA_JUP_USDC"
+      "BEEFY_CBETH_WETH",
+      "WOO_WETH"
     ]
   },
   "stacking": {
@@ -123,15 +176,16 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "ETH",
-      "WESTAKE_EGLD",
-      "MANTLEREWARDSTATION_MNT",
-      "WOO_WOO",
-      "ARBDOGE_AIDOGE",
-      "ABR",
-      "THEGRAPH_GRT",
       "WFTM",
+      "ABR",
       "ORANGEFI_WETH",
+      "RESERVEPROTOCOL_CBETH_WSTETH",
+      "WOO_WOO",
+      "THEGRAPH_GRT",
+      "ETH",
+      "MANTLEREWARDSTATION_MNT",
+      "ARBDOGE_AIDOGE",
+      "WESTAKE_EGLD",
       "SOLV_BTCB"
     ]
   },
@@ -140,23 +194,23 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "FRXETH",
       "STONE",
-      "ETH",
-      "USDT",
-      "DAI",
-      "ZKJ",
-      "MKR",
       "BNB",
-      "USDC",
+      "USDT",
       "VARA",
-      "VOXEL",
-      "EGLD",
+      "ZKJ",
+      "FRXETH",
       "ATOM",
+      "BTCB",
+      "VOXEL",
       "MATIC",
       "AVAX",
-      "BTCB",
-      "DOT"
+      "USDC",
+      "DAI",
+      "MKR",
+      "EGLD",
+      "DOT",
+      "ETH"
     ]
   },
   "notscraped": {
@@ -164,16 +218,16 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "NOT",
-      "USDT",
-      "PIP",
+      "ORCA_JUP_USDC",
+      "JUP",
       "APE",
+      "PIP",
+      "USDT",
+      "NOT",
       "TON",
       "PEPE",
       "MATIC",
-      "JUPITER_JUP",
-      "ORCA_JUP_USDC",
-      "JUP"
+      "JUPITER_JUP"
     ]
   },
   "cex": {
@@ -181,9 +235,9 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "USDT",
       "PIP",
       "APE",
+      "USDT",
       "TON",
       "PEPE",
       "MATIC"
@@ -202,12 +256,12 @@
     "kind": "strategie",
     "description": "blabla",
     "tokens": [
-      "BEEFY_GMX",
-      "BEEFY_USDC+_USD+",
-      "BEEFY_SONNE_USDC",
       "BEEFY_CBETH_WETH",
+      "BEEFY_USDC+_USD+",
+      "BEEFY_GMX",
+      "BEEFY_OVN_USD+",
       "BEEFY_USD+_FRAX_USDC",
-      "BEEFY_OVN_USD+"
+      "BEEFY_SONNE_USDC"
     ]
   }
 }
