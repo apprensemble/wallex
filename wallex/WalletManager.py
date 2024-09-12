@@ -283,7 +283,7 @@ class WalletManager:
     lts = []
     tokens_non_suivi = {}
     # la famille des tokens suivis est hold, locked, stablecoin et flexible yield.
-    for f in ['hold','flexible_yield','locked','all_stablecoin']:
+    for f in ['hold','flexible_yield','locked','stablecoin']:
       if f == 'flexible_yield':
         for g in list(self.get_flexible_yield().keys()):
           lts.extend(list(self.get_tokens_by_strategie(g).keys()))

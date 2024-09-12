@@ -1,4 +1,5 @@
 from wallex import WalletManager,Logger,Config
+import pandas as pd
 
 class TimeSeriesManager():
 
@@ -61,7 +62,7 @@ class TimeSeriesManager():
       tokens = wm.get_flexible_yield() 
     elif strategie.lower() == "by_wallet":
       tokens = wm.get_total_by_wallet()
-    elif strategie.lower() == "non_suivis":
+    elif strategie.lower() == "non_suivis" or strategie.lower() == "non_suivi":
       tokens = wm.get_tokens_non_suivi()
     else:
       tokens = wm.get_tokens_by_strategie(strategie)
@@ -71,38 +72,92 @@ class TimeSeriesManager():
 
     return dataset
 
-  def get_complexe_dataset(self,strategie="by_blockchain"):
-    # a titre d'exemple
-  #  dataset = {
-  #      "labels": [
-  #          "Data 1",
-  #          "Data 2",
-  #          "Data 3",
-  #          "Data 4",
-  #          "Data 5",
-  #          "Data 6",
-  #          "Data 7",
-  #          "Data 8",
-  #      ],
-  #      "datasets": [{"data": [14, 22, 36, 48, 60, 90, 28, 1]}],
-  #  }
+  def get_dataframe_by_blockchain(self):
     wm = self.wm
     res = wm.get_tokens_by_blockchain()
-    labels_liste_bc = list(res.keys())
-    values_liste_bc = []
-    labels_details = {}
-    values_details = {}
-    for bc in labels_liste_bc:
-      values_liste_bc.extend(res[bc].values())
-      labels_details[bc] = list(res[bc].keys())
-      values_details[bc] = list(res[bc].values())
+    dfp = {'bc':[],'token':[],'balance':[]}
+    for bc in res:
+      for token in res[bc]:
+        dfp['bc'].append(bc)
+        dfp['token'].append(token)
+        dfp['balance'].append(res[bc][token])
 
-    dataset = {
-    "labels": labels_liste_bc.extend(labels_details),
-    "datasets": [{"data": values_liste_bc,"label":"blockchain"},{"data":values_details['Solana'],"label":"Solana"},{"data":values_details['Base'],"label":"Base"}],
-    }
-    return dataset
+    df = pd.DataFrame(dfp)
+    return df
 
-    
-    
+  def get_global_dataframe(self):
+    wm = self.wm
+    all_wallets = wm.mes_wallets
+    dfp = {'wallet':[],'bc':[],'token':[],'usd_balance':[]}
+    for wallet in all_wallets:
+      blockchains = all_wallets[wallet].get_detailled_balance_by_blockchain()
+      for bc in blockchains:
+        for tokens in blockchains[bc]:
+          for token in tokens:
+            dfp['wallet'].append(wallet)
+            dfp['bc'].append(bc)
+            dfp['token'].append(token)
+            dfp['usd_balance'].append(tokens[token])
+    df = pd.DataFrame(dfp)
+    return df
 
+  def get_global_dataframe_with_tags(self)->pd.DataFrame:
+    '''
+    get a full dataframe with full informations:
+
+    :param famille: stable/eth/btc/sol/autres 
+    :param strategie: hold/non_suivi/trade
+    :param placement: nom_defi ou libre
+    :mode: lp,lpc,locked,stacked,farmed,lend
+
+    :return: DataFrame
+    '''
+    wm = self.wm
+    all_wallets = wm.mes_wallets
+    dfp = {'wallet':[],'bc':[],'token':[],'usd_balance':[],'famille':[],'strategie':[],'placement':[],'mode_de_placement':[]}
+    famille = ['stablecoin','ETH','BTC','SOL']
+    flexible_yield = self.get_dataset_from_strategie("flexible_yield")['labels']
+    check = lambda token,strategie: True if token in self.get_dataset_from_strategie(strategie)['labels'] else False
+    for wallet in all_wallets:
+      blockchains = all_wallets[wallet].get_detailled_balance_by_blockchain()
+      for bc in blockchains:
+        for tokens in blockchains[bc]:
+          for token in tokens:
+            dfp['wallet'].append(wallet)
+            dfp['bc'].append(bc)
+            dfp['token'].append(token)
+            dfp['usd_balance'].append(tokens[token])
+            if check(token,'non_suivi'):
+              dfp['famille'].append('autre')
+              dfp['strategie'].append('non_suivi')
+              dfp['placement'].append('libre')
+              dfp['mode_de_placement'].append('')
+            else:
+              r = 'libre'
+              for m in flexible_yield:
+                if check(token,m):
+                  r = m
+                  break
+                else:
+                  r = 'libre'
+              dfp['mode_de_placement'].append(r)
+              r = 'autre'
+              for f in famille:
+                if check(token,f):
+                  r = f
+                  break
+                else:
+                  r = 'autre'
+              dfp['famille'].append(r)
+              if check(token,'hold'):
+                dfp['strategie'].append("hold")
+              else:
+                dfp['strategie'].append('trade')
+              if len(token.split('_')) > 1:
+                dfp['placement'].append(token.split('_')[0])
+              else:
+                dfp['placement'].append('libre')
+    for i in dfp:
+      print(i,(len(dfp[i])))
+    df = pd.DataFrame(dfp)
+    return df

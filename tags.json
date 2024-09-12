@@ -86,7 +86,7 @@
       "JITOSOL"
     ]
   },
-  "all_stablecoin": {
+  "stablecoin": {
     "nom": "stablecoin",
     "kind": "strategie",
     "description": "blabla",
@@ -97,22 +97,6 @@
       "AERODROME_USDC_USD+",
       "BEEFY_USD+_FRAX_USDC",
       "RDNT_USDT",
-      "USDT",
-      "USDC",
-      "SUSD",
-      "AXLUSD",
-      "DAI",
-      "DAI+",
-      "FRAX",
-      "USD+",
-      "USDC+"
-    ]
-  },
-  "stablecoin": {
-    "nom": "stablecoin",
-    "kind": "strategie",
-    "description": "blabla",
-    "tokens": [
       "USDT",
       "USDC",
       "SUSD",

@@ -64,7 +64,6 @@ class Tokens:
     def add_json_entries_from_multi_blockchain(self,entries):
         # Il faudrait check les entries
         for blockchain in entries:
-            print("entries",entries)
             if 'symbol' in entries[blockchain]:
                 # it's an entry
                 self.add_json_entry(entries[blockchain])
