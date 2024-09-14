@@ -1,8 +1,10 @@
-import time, json
+import time,os, json
 
 class Logger:
 
   def __init__(self,history_file="hf.json"):
+    # I need a temporary unik file for this information.
+    self.lock_done = False
     history = {
     }
     try:
@@ -13,14 +15,49 @@ class Logger:
     self.history_file = history_file
     self.history = history
 
+  def unlock(self):
+    if self.lock_done:
+      try:
+        os.rmdir("lock_wallex")
+        print("unlock")
+        self.lock_done = False
+      except FileNotFoundError:
+        print("Le lock n'a pu etre trouvé!!! attention...")
+    else:
+      print("vous n'avez jamais effectué de lock..")
+
+  def lock(self):
+    stamp = time.time()+5
+    newStamp = time.time()+0
+    if self.lock_done:
+      self.unlock()
+    lock_done = False
+    while stamp - newStamp > 0:
+      try:
+        os.mkdir("lock_wallex")
+        print("lock")
+        lock_done = True
+        newStamp = stamp
+      except FileExistsError:
+        newStamp = time.time()
+        print("another instance running...")
+        time.sleep(1)
+    self.lock_done = lock_done
+    return lock_done
+
   def load_file(self,filename):
     """
     open json file
     return an object
     """
-    f = open(filename)
-    fjson = json.loads(f.read())
-    return fjson
+    self.lock()
+    if self.lock_done:
+      f = open(filename)
+      fjson = json.loads(f.read())
+      self.unlock()
+      return fjson
+    else:
+      raise Exception("A lock is already there...")
 
   def save_to_file(self,filename,data):
     """
@@ -29,8 +66,13 @@ class Logger:
     filename,data: filename str,data dict
     return: None
     """
-    f = open(filename,'w')
-    json.dump(data,f)
+    self.lock()
+    if self.lock_done:
+      f = open(filename,'w')
+      json.dump(data,f)
+      self.unlock()
+    else:
+      raise Exception("A lock is already there...")
 
   def get_ref_time(self):
     #ref annee_jour de l'annee_heure et demi heure tel que

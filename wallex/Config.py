@@ -31,9 +31,7 @@ class Config:
         open json file
         return an object
         """
-        f = open(filename)
-        fjson = json.loads(f.read())
-        return fjson
+        return self.logger.load_file(filename)
 
     def save_to_file(self,filename,data):
         """
@@ -42,8 +40,8 @@ class Config:
         filename,data: filename str,data dict
         return: None
         """
-        f = open(filename,'w')
-        json.dump(data,f)
+        self.logger.save_to_file(filename,data)
+        return True
 
     def convert_pubkey_to_wallet_name(self,pubkey):
         names = {}

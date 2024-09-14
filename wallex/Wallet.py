@@ -168,6 +168,17 @@ class Tokens:
                     continue
         return bc
 
+    def get_detailled_tokens_infos_by_blockchain(self):
+        bc = {}
+        for blockchain in self.entries:
+            bc[blockchain] = []
+            for token in self.entries[blockchain]:
+                try:
+                    bc[blockchain].append({token:self.entries[blockchain][token].get_json_entry()})
+                except AttributeError:
+                    continue
+        return bc
+
     def get_detailled_balance_by_token(self):
         tokens = {}
         for blockchain in self.entries:
