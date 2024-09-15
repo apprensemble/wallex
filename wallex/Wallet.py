@@ -55,7 +55,11 @@ class Tokens:
         blockchain = entry['blockchain']
         id = entry['id']
         try:
-            self.entries[blockchain][id] = Token.Token(entry)
+            if blockchain in self.entries and id in self.entries[blockchain]:
+                new_entry_token = Token.Token(entry)
+                self.entries[blockchain][id].sum_token_values(new_entry_token)
+            else:
+                self.entries[blockchain][id] = Token.Token(entry)
         except KeyError:
             self.entries[blockchain] = {}
             self.entries[blockchain][id] = Token.Token(entry)

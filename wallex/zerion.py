@@ -23,7 +23,7 @@ def get_with_parameters(url,parameters,headers):
     print(response.json()['errors'])
     return {}
 
-def parse_response_and_return_wallet(rjson):
+def parse_response_and_return_wallet(rjson,origine="simple"):
   mon_wallet = Wallet.Tokens()
   for token in rjson:
     try:
@@ -51,6 +51,7 @@ def parse_response_and_return_wallet(rjson):
         'native_balance': native_balance,
         'usd_balance': usd_balance,
         'blockchain': blockchain.capitalize(),
+        'origine': origine,
         'type': "EVM",
         'exchange_rate': exchange_rate
       }
@@ -81,6 +82,31 @@ def get_evm_wallet(account,refresh=False):
     rjson =  get_with_parameters(url,parameters,headers)
     if 'data' in rjson:
       c.save_to_file(refresh_file,rjson)
+    else:
+      raise Exception(f"no data for {account} {rjson}")
   resultat = parse_response_and_return_wallet(rjson['data'])
   return resultat
 
+def get_evm_complex_wallet(account,refresh=False):
+  refresh_file = "zerion_complex"+account+".json"
+  resultat = {}
+  url_suffixe = account+"/positions/?filter[positions]=only_complex&currency=usd&filter[trash]=only_non_trash&sort=value"
+  url = "https://api.zerion.io/v1/wallets/" + url_suffixe
+  parameters = {
+  }
+  headers = {
+    'Accepts': 'application/json',
+    "authorization": "Basic "+zerion_api_key
+  }
+  if refresh:
+    rjson =  get_with_parameters(url,parameters,headers)
+    if 'data' in rjson:
+      c.save_to_file(refresh_file,rjson)
+  elif os.path.isfile(refresh_file):
+    rjson = c.load_file(refresh_file)
+  else:
+    rjson =  get_with_parameters(url,parameters,headers)
+    if 'data' in rjson:
+      c.save_to_file(refresh_file,rjson)
+  resultat = parse_response_and_return_wallet(rjson['data'],"complexe")
+  return resultat

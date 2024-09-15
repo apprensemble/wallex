@@ -249,7 +249,7 @@ class TimeSeriesManager():
   def get_full_df(self):
     wm = self.wm
     all_wallets = wm.mes_wallets
-    dfp = {'wallet':[],'bc':[],'token':[],'exchange_rate':[],'native_balance':[],'usd_balance':[],'famille':[],'strategie':[],'type_placement':[],'vision':[],'position':[]}
+    dfp = {'wallet':[],'bc':[],'token':[],'exchange_rate':[],'native_balance':[],'usd_balance':[],'famille':[],'strategie':[],'type_placement':[],'vision':[],'position':[],'origine':[]}
     check = lambda token,strategie: True if token in self.get_dataset_from_strategie(strategie)['labels'] else False
     for wallet in all_wallets:
       blockchains = all_wallets[wallet].get_detailled_tokens_infos_by_blockchain()
@@ -260,6 +260,7 @@ class TimeSeriesManager():
             dfp['bc'].append(bc)
             dfp['token'].append(token)
             dfp['native_balance'].append(tokens[token]['native_balance'])
+            dfp['origine'].append(tokens[token]['origine'])
             if tokens[token]['missing_exchange_rate']:
               dfp['usd_balance'].append(0)
               dfp['exchange_rate'].append(0)

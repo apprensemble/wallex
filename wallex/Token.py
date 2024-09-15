@@ -55,6 +55,10 @@ class Token:
             self.missing_exchange_rate = True
         self.type = entry['type']
         self.blockchain = entry['blockchain']
+        if 'origine' in entry:
+            self.origine = entry['origine']
+        else:
+            self.origine = "simple"
 
     def compute_usd_balance(self):
         try:
@@ -63,6 +67,11 @@ class Token:
         except (AttributeError,ValueError):
             self.missing_exchange_rate = True
             print("Missing exchange rate")
+
+    def sum_token_values(self,new_token):
+        self.native_balance += new_token.native_value
+        self.compute_usd_balance()
+
 
     def add_exchange_rate(self,exchange_rate):
         self.usd_balance = round(float(self.native_balance) * float(exchange_rate),2)

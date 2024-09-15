@@ -41,7 +41,7 @@ def create_custom_wallets_file(filename):
     blockchain = blockchain.capitalize()
     if wallet in custom_wallet_file.keys():
       if blockchain in custom_wallet_file[wallet].keys():
-        custom_wallet_file[wallet][blockchain].update({token:{ "id":token, "name":token, "symbol":token, "native_balance":native_balance, "exchange_rate":exchange_rate.split("\n")[0], "usd_balance":usd_balance, "type":"Custom", "blockchain":blockchain }}) 
+        custom_wallet_file[wallet][blockchain].update({token:{ "id":token, "name":token, "symbol":token, "native_balance":native_balance, "exchange_rate":exchange_rate.split("\n")[0], "usd_balance":usd_balance, "type":"Custom", "blockchain":blockchain,"origine":"manuelle" }}) 
       else:
         custom_wallet_file[wallet][blockchain] = {
       token:{
@@ -52,7 +52,8 @@ def create_custom_wallets_file(filename):
         "exchange_rate":exchange_rate.split("\n")[0],
         "usd_balance":usd_balance,
         "type":"Custom",
-        "blockchain":blockchain }}
+        "blockchain":blockchain,
+        "origine": "manuelle" }}
     else:
       custom_wallet_file[wallet] = {
     blockchain:{
@@ -64,7 +65,8 @@ def create_custom_wallets_file(filename):
         "exchange_rate":exchange_rate.split("\n")[0],
         "usd_balance":usd_balance,
         "type":"Custom",
-        "blockchain":blockchain
+        "blockchain":blockchain,
+        "origine": "manuelle"
   }}}
   c.save_to_file(filename,custom_wallet_file)
   return custom_wallet_file 
