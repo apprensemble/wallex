@@ -340,5 +340,5 @@ class TimeSeriesManager():
     df = self.get_full_df()
     df.to_csv("../wallex_csv/"+filename,index=False)
     df = self.get_global_dataframe_with_tags()
-    filename = f"wallex_usdb_df_{year}{month}{mday}{hour}.csv"
+    filename = f"wallex_usd_df_{year}{month}{mday}{hour}.csv"
     df.to_csv("../wallex_csv/"+filename,index=False)
