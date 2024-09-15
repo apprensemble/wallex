@@ -36,6 +36,8 @@ def parse_response_and_return_wallet(rjson,origine="simple"):
       blockchain = token['relationships']['chain']['data']['id']
       symbol = token['attributes']['fungible_info']['symbol'] 
       name = token['attributes']['fungible_info']['name']
+      position_type = token['attributes']['position_type']
+      protocol = token['attributes']['protocol']
       # AVAX et WAVAX ont le symbol AVAX sur zerion
       if blockchain.capitalize() == 'Binance-smart-chain':
         blockchain = "BNB"
@@ -53,7 +55,9 @@ def parse_response_and_return_wallet(rjson,origine="simple"):
         'blockchain': blockchain.capitalize(),
         'origine': origine,
         'type': "EVM",
-        'exchange_rate': exchange_rate
+        'exchange_rate': exchange_rate,
+        'position_type': position_type,
+        'protocol': protocol
       }
       mon_wallet.add_json_entry(entry)
     except Exception as e:
@@ -87,7 +91,7 @@ def get_evm_wallet(account,refresh=False):
   return resultat
 
 def get_evm_complex_wallet(account,refresh=False):
-  refresh_file = "zerion_complex"+account+".json"
+  refresh_file = "zerion_complex_"+account+".json"
   resultat = {}
   url_suffixe = account+"/positions/?filter[positions]=only_complex&currency=usd&filter[trash]=only_non_trash&sort=value"
   url = "https://api.zerion.io/v1/wallets/" + url_suffixe

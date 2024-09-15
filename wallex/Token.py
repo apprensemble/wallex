@@ -55,6 +55,10 @@ class Token:
             self.missing_exchange_rate = True
         self.type = entry['type']
         self.blockchain = entry['blockchain']
+        if 'protocol' in entry:
+            self.protocol = entry['protocol']
+        else:
+            self.protocol = 'aucun_protocol'
         if 'position_type' in entry:
             self.position_type = entry['position_type']
         else:
@@ -73,9 +77,9 @@ class Token:
             print("Missing exchange rate")
 
     def sum_token_values(self,new_token):
-        self.native_balance += new_token.native_value
+        if self.id == new_token.id and self.blockchain == new_token.blockchain and self.position_type == new_token.position_type:
+            self.native_balance += new_token.native_value
         self.compute_usd_balance()
-
 
     def add_exchange_rate(self,exchange_rate):
         self.usd_balance = round(float(self.native_balance) * float(exchange_rate),2)
@@ -90,3 +94,11 @@ class Token:
             print(self.symbol," ",self.usd_balance)
         except AttributeError as ae:
             pass
+    
+    def is_same_position(self,token):
+        if self.id == token.id and self.blockchain == token.blockchain and self.position_type == token.position_type:
+            return True
+        else:
+            return False
+
+        

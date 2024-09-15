@@ -132,8 +132,22 @@ class WalletManager:
             resultat.update({token:round(sum[token],2)})
     return resultat
 
+
+  def fusion_wallets_1_2_in_a_third_named_(self,wallet1:Wallet.Tokens,wallet2:Wallet.Tokens,nom_wallet_final:str):
+    jwallet1 = wallet1.get_detailled_tokens_infos_by_blockchain()
+    jwallet2 = wallet2.get_detailled_tokens_infos_by_blockchain()
+    jwallet3 = {}
+    for blockchain in jwallet1:
+      jwallet3[blockchain] = {}
+      w3 = jwallet3[blockchain]
+      w1 = jwallet1[blockchain]
+      if blockchain in wallet2:
+        w2 = jwallet2[blockchain]
+        
+    pass
+
   def fusion_wallets_1_2_in_a_third_named(self,wallet1:Wallet.Tokens,wallet2:Wallet.Tokens,nom_wallet_final:str):
-    #fusion
+    #fusion /!\ devriat etre geré dans la classe wallet!
     wallet3 = Wallet.Tokens()
     for blockchain in wallet1.entries:
       wallet3.entries[blockchain] = {}
