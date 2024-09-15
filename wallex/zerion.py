@@ -62,7 +62,7 @@ def parse_response_and_return_wallet(rjson,origine="simple"):
   return mon_wallet
 
 def get_evm_wallet(account,refresh=False):
-  refresh_file = "zerion_"+account
+  refresh_file = "zerion_"+account+".json"
   resultat = {}
   url_suffixe = account+"/positions/?filter[positions]=only_simple&currency=usd&filter[trash]=only_non_trash&sort=value"
   url = "https://api.zerion.io/v1/wallets/" + url_suffixe
@@ -74,16 +74,15 @@ def get_evm_wallet(account,refresh=False):
   }
   if refresh:
     rjson =  get_with_parameters(url,parameters,headers)
-    if 'data' in rjson:
-      c.save_to_file(refresh_file,rjson)
   elif os.path.isfile(refresh_file):
     rjson = c.load_file(refresh_file)
   else:
+    refresh = True
     rjson =  get_with_parameters(url,parameters,headers)
-    if 'data' in rjson:
-      c.save_to_file(refresh_file,rjson)
-    else:
-      raise Exception(f"no data for {account} {rjson}")
+  if 'data' in rjson and refresh:
+    c.save_to_file(refresh_file,rjson)
+  elif 'data' not in rjson:
+    raise Exception(f"no data for {account} {rjson}")
   resultat = parse_response_and_return_wallet(rjson['data'])
   return resultat
 

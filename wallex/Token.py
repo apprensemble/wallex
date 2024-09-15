@@ -55,6 +55,10 @@ class Token:
             self.missing_exchange_rate = True
         self.type = entry['type']
         self.blockchain = entry['blockchain']
+        if 'position_type' in entry:
+            self.position_type = entry['position_type']
+        else:
+            self.position_type = 'wallet'
         if 'origine' in entry:
             self.origine = entry['origine']
         else:
