@@ -71,6 +71,16 @@ class WalletManager:
     self.fusion_wallets_by_name_1_2_in_3('binance_evm','BINANCE_EVM','custom_binance_evm')
     self.fusion_wallets_by_name_1_2_in_3('bybit_evm','BYBIT_EVM','custom_bybit_evm')
     self.fusion_wallets_by_name_1_2_in_3('coinbasewallet','COINBASEWALLET','custom_coinbasewallet')
+    self.update_all_my_wallets()
+    psol = self.mes_wallets['custom_phantom_sol']
+    psol.remove_token_from_blockchain("ORCA","Solana")
+    self.mes_wallets['custom_phantom_sol'] = psol
+    self.remove_token_from_wallet_in_blockchain('BLOOM','custom_cwl','Base')
+    self.remove_token_from_wallet_in_blockchain('BOMB','custom_cwl','Base')
+    self.save_my_personal_wallets()
+    self.mes_wallets = {}
+    self.import_custom_wallets_from_json_file("all_my_wallets.json")
+    self.get_total_by_wallet()
 
   def launch_new_scrapping(self):
     scraper = Scraper.Scraper()
@@ -133,67 +143,27 @@ class WalletManager:
     return resultat
 
 
-  def fusion_wallets_1_2_in_a_third_named_(self,wallet1:Wallet.Tokens,wallet2:Wallet.Tokens,nom_wallet_final:str):
+  def fusion_wallets_1_2_in_a_third_named(self,wallet1:Wallet.Tokens,wallet2:Wallet.Tokens,nom_wallet_final:str):
     jwallet1 = wallet1.get_detailled_tokens_infos_by_blockchain()
     jwallet2 = wallet2.get_detailled_tokens_infos_by_blockchain()
-    jwallet3 = {}
-    for blockchain in jwallet1:
-      jwallet3[blockchain] = {}
-      w3 = jwallet3[blockchain]
-      w1 = jwallet1[blockchain]
-      if blockchain in wallet2:
-        w2 = jwallet2[blockchain]
-        
-    pass
-
-  def fusion_wallets_1_2_in_a_third_named(self,wallet1:Wallet.Tokens,wallet2:Wallet.Tokens,nom_wallet_final:str):
-    #fusion /!\ devriat etre geré dans la classe wallet!
-    wallet3 = Wallet.Tokens()
-    for blockchain in wallet1.entries:
-      wallet3.entries[blockchain] = {}
-      w3 = wallet3.entries[blockchain]
-      w1 = wallet1.entries[blockchain]
-      if blockchain in wallet2.entries:
-        #addition
-        w2 = wallet2.entries[blockchain]
-        for token in w1:
-          if token in w2:
-            for balance_type in ["native_balance","usd_balance"]:
-              total = 0.0
-              if hasattr(w1[token],balance_type) and hasattr(w2[token],balance_type):
-                total = getattr(w1[token],balance_type) + getattr(w2[token],balance_type)
-              elif hasattr(w1[token],balance_type):
-                total = getattr(w1[token],balance_type)
-              elif hasattr(w2[token],balance_type):
-                total = getattr(w2[token],balance_type)
-              if token not in w3:
-                w3[token] = Token.Token(w1[token].get_json_entry())
-              setattr(w3[token],balance_type,total)
-          else:
-            w3[token] = w1[token]
-        for token in w2:
-          if token not in w1:
-            w3[token] = w2[token]
-      else:
-        for token in w1:
-          w3[token] = Token.Token(w1[token].get_json_entry())
-    for blockchain in wallet2.entries:
-      w2 = wallet2.entries[blockchain]
-      if blockchain not in wallet1.entries:
-        wallet3.entries[blockchain] = {}
-        w3 = wallet3.entries[blockchain]
-        for token in w2:
-          w3[token] = Token.Token(w2[token].get_json_entry())
-    self.mes_wallets.update({nom_wallet_final:wallet3})
-    return wallet3
+    mon_wallet = Wallet.Tokens()
+    for bc in jwallet1:
+      for tokens in jwallet1[bc]:
+          for token in tokens.keys():
+            mon_wallet.add_json_entry(tokens[token])
+    for bc in jwallet2:
+      for tokens in jwallet2[bc]:
+          for token in tokens.keys():
+            mon_wallet.add_json_entry(tokens[token])
+    mon_wallet.name = nom_wallet_final
+    self.mes_wallets.update({nom_wallet_final:mon_wallet})
+    return mon_wallet
 
   def fusion_wallets_by_name_1_2_in_3(self,first:str,second:str,name_of_the_result:str):
     w1 = self.mes_wallets[first]
     w2 = self.mes_wallets[second]
     w3 = self.fusion_wallets_1_2_in_a_third_named(w1,w2,name_of_the_result)
     return w3
-
-
 
   def export_custom_wallet_as_json(self,wallet:Wallet.Tokens):
     blockchains = {}
