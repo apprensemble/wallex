@@ -7,6 +7,13 @@ Ses principales qualitées / fonctionnalités:
   * total : affiche le total de chaque wallet
   * detaillée : affiche chaque token
   * par criteres perso : à l'aide de tags on peut afficher par strategies/ categories/ etc
+  * par criteres predefinis:
+    * **protocol** AERODROME/BEEFY/KILOEX etc.
+    * **origine** manuelle: via fichier csv/simple: cad token on chain/complexe cad sur des protocol tel que aerodrome & co.
+    * **strategie** invested:investi dans un protocol/suivi: sur le wallet mais on tag(par defaut il y a stablecoin et hold)/non_suivi
+    * **vision** trade/hold (vision court terme ou long terme si vous preferez)
+    * **famille** BTC/ETH/SOL/Autres
+    * **position** wallet/locked/stacked/deposit/farm/etc.
   * des totaux historiques : total par wallet en USD pour le moment
 
 Pour ce faire il y a:
@@ -25,7 +32,7 @@ Pour ce faire il y a:
 * Interface web : pour faire ses custom wallet et suivre plus facilement ses wallets
 * Interface mobile: pourquoi pas?
 
-## APIs
+## APIs consommées
 
 Les apis utilisées actuellement sont CMC pour les quotes, Moralis pour Solana et Blockscout pour le reste.
 
@@ -56,10 +63,15 @@ lambda token_symbol : sum(float(token['attributes']['value'] if token['attribute
 
 ## Fichiers de configurations:
 
+### dossiers
+
+**wallex_common_data** contient les fichiers de données générés par les appels aux apis, les timeseries.
+**wallex_csv** dossier d'export des fichiers csv
+**wallex_config** dossier contenant les fichiers de configuration (extra_positions.txt/wallex_config.json)
+
 ### extra_positions.txt
 
-C'est le fameux fichier de preparation des wallets customs. Il permet de generer des customs wallets et aussi un fichier d'exemple de tags.
-Je n'ai pas l'intention pour le moment de gerer la fusions des fichiers tags. Ce n'est pas compliqué mais pas la priorité.
+C'est un fichier csv de preparation des wallets customs. Il permet de generer des customs wallets et aussi un fichier d'exemple de tags.
 
 Le format actuel est le suivant :
 
@@ -82,7 +94,7 @@ Reflexion faite le TOML n'est pas utile car il n'y a que les tags à parser. La 
 
 ### custom_wallets.json
 
-fichier de sauvegarde:restauration des customs_wallets. L'idée est de les charger à par et eventuellement les fusionner avec les wallets chargé via API. La fusion est pris en charge.
+fichier de sauvegarde:restauration des customs_wallets. L'idée est de les charger à part et les fusionner avec les wallets chargé via API. La fusion est pris en charge.
 
 ### hf.json
 
@@ -94,9 +106,10 @@ Contient le resultat de CMC
 
 ### tags.json
 
-Contient la definition des tags
+Contient la definition des tags. Il y en a un dans wallex_config que l'on peut modifier uniquememnt manuellement et un autre automatique dans wallex_common_data(on peut egalement le modifier à la main mais il sera ecrasé sans prevenir)
 
-### ** config_suivi_unitaire.json **
+### ** config_suivi_unitaire.json(wallex_config.json) **
 
 Ficher de configuration principal. Il contient les clés privés des API utilisés, les clés publiques des wallets cibles, les urls des APIs et le nom et chemin des fichiers cités précedement. C'est un fichier indispensable au fonctionnement de l'appli, les autres peuvent etre regeneré ou ne sont pas indispensable.
+On peut l'appeller comme on veut tt est configurable
 

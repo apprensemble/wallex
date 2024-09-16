@@ -5,15 +5,16 @@ class WalletManager:
   tags: dict
 
   def __init__(self) -> None:
-    history_file = "hf_api.json"
-    self.history = Logger.Logger(history_file)
     self.config = Config.Config()
+    self.wallex_data_dir = self.config.wallex_common_data_dir
+    history_file = f"{self.wallex_data_dir}hf_api.json"
+    self.history = Logger.Logger(history_file)
     self.mes_wallets = {}
-    self.tags = self.config.load_file("tags.json")
+    self.tags = self.config.load_file(f"{self.wallex_data_dir}tags.json")
     self.parsed_quotes = self.config.cmc.get_parsed_quotes(False)
     self.wallets_to_export = {}
     #patch: il faut que j'externalise les truc perso
-    self.all_my_personnal_wallets = ['binance_sol', 'bybit_sol', 'cwsol', 'TELEGRAM', 'BITGET', 'CWDCA','EGLD', 'custom_cwl', 'custom_phantom_sol','custom_binance_evm', 'custom_bybit_evm', 'custom_coinbasewallet','KEPLR','ARGENTX','SUBWALLET']
+    self.all_my_personnal_wallets = ['binance_sol', 'bybit_sol', 'cwsol', 'TELEGRAM', 'BITGET', 'CWDCA','EGLD', 'custom_cwl', 'custom_phantom_sol','custom_binance_evm', 'custom_bybit_evm', 'KEPLR','ARGENTX','SUBWALLET']
 
   def call_refresh_quotes(self):
     self.parsed_quotes = self.config.cmc.get_parsed_quotes(True)
@@ -54,23 +55,27 @@ class WalletManager:
       mes_wallets.update({wallet:mon_wallet})
     for wallet in c.evm_wallets:
       mon_wallet = zerion.get_evm_wallet(c.evm_wallets[wallet],refresh_quotes)
+      mon_wallet2 = zerion.get_evm_complex_wallet(c.evm_wallets[wallet],refresh_quotes)
       mon_wallet.name = wallet
+      mon_wallet2.name = wallet
       if 'Mantle' not in mon_wallet.entries.keys():
         mon_wallet.add_json_entry(mantle.get_native_balance_from_blockscout(c.evm_wallets[wallet]))
         mon_wallet.add_json_entries(mantle.get_tokens_balance_from_blockscout(c.evm_wallets[wallet]))
 
       mon_wallet.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
-      mes_wallets.update({wallet:mon_wallet})
+      mon_wallet2.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
+      mon_wallet3 = self.fusion_wallets_1_2_in_a_third_named(mon_wallet,mon_wallet2,wallet)
+      mes_wallets.update({wallet:mon_wallet3})
 
       self.mes_wallets = mes_wallets
     # chargement de la partie remplie off chain(non prise en charge par les API comme les lock/stack etc.)
-    self.import_custom_wallets_from_json_file("custom_wallets_.json")
+    self.import_custom_wallets_from_json_file(f"{self.wallex_data_dir}custom_wallets_.json")
     self.fusion_wallets_by_name_1_2_in_3('cwl','CWL','custom_cwl')
     self.fusion_wallets_by_name_1_2_in_3('cwl','CWL','custom_cwl')
     self.fusion_wallets_by_name_1_2_in_3('phantom_sol','PHANTOM_SOL','custom_phantom_sol')
     self.fusion_wallets_by_name_1_2_in_3('binance_evm','BINANCE_EVM','custom_binance_evm')
     self.fusion_wallets_by_name_1_2_in_3('bybit_evm','BYBIT_EVM','custom_bybit_evm')
-    self.fusion_wallets_by_name_1_2_in_3('coinbasewallet','COINBASEWALLET','custom_coinbasewallet')
+    #self.fusion_wallets_by_name_1_2_in_3('coinbasewallet','COINBASEWALLET','custom_coinbasewallet')
     self.update_all_my_wallets()
     psol = self.mes_wallets['custom_phantom_sol']
     psol.remove_token_from_blockchain("ORCA","Solana")
@@ -79,7 +84,7 @@ class WalletManager:
     self.remove_token_from_wallet_in_blockchain('BOMB','custom_cwl','Base')
     self.save_my_personal_wallets()
     self.mes_wallets = {}
-    self.import_custom_wallets_from_json_file("all_my_wallets.json")
+    self.import_custom_wallets_from_json_file(f"{self.wallex_data_dir}all_my_wallets.json")
     self.get_total_by_wallet()
 
   def launch_new_scrapping(self):
@@ -197,7 +202,7 @@ class WalletManager:
     for name in nom_wallet_cible:
       self.mes_wallets[name].name = name
       self.export_custom_wallet_as_json(self.mes_wallets[name])
-    saved_wallets = self.save_exported_wallets("all_my_wallets.json")
+    saved_wallets = self.save_exported_wallets(f"{self.wallex_data_dir}all_my_wallets.json")
     return saved_wallets
 
   def update_all_my_wallets(self,refresh_quotes=False):
@@ -231,9 +236,9 @@ class WalletManager:
     except Exception as e:
       print(e)
 
-  def get_flexible_yield(self):
+  def get_flexible_yield(self,tags_list:list=[]):
     flexible_yield = {}
-    for s in ["lp","lpc","farming","stacking","lending"]:
+    for s in tags_list:
       flexible_yield.update({s:sum(self.get_tokens_by_strategie(s).values())})
     return flexible_yield
 

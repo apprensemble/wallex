@@ -5,6 +5,7 @@ import os.path
 
 c = Config.Config()
 zerion_api_key = c.zerion_api_key
+data_dir = c.wallex_common_data_dir
 # fichier de stockage en attendant une bdd( pour reduire les appels)
 
 def get_with_parameters(url,parameters,headers):
@@ -34,10 +35,17 @@ def parse_response_and_return_wallet(rjson,origine="simple"):
       else:
         usd_balance = 0.0
       blockchain = token['relationships']['chain']['data']['id']
-      symbol = token['attributes']['fungible_info']['symbol'] 
-      name = token['attributes']['fungible_info']['name']
-      position_type = token['attributes']['position_type']
+      if origine == "complexe":
+        name = token['attributes']['name']
+        symbol = token['attributes']['fungible_info']['symbol'] 
+        symbol = f"{name}_{symbol}"
+      else:
+        name = token['attributes']['fungible_info']['name']
+        symbol = token['attributes']['fungible_info']['symbol'] 
+      position = token['attributes']['position_type']
       protocol = token['attributes']['protocol']
+      if not protocol:
+        protocol = 'libre'
       # AVAX et WAVAX ont le symbol AVAX sur zerion
       if blockchain.capitalize() == 'Binance-smart-chain':
         blockchain = "BNB"
@@ -56,7 +64,7 @@ def parse_response_and_return_wallet(rjson,origine="simple"):
         'origine': origine,
         'type': "EVM",
         'exchange_rate': exchange_rate,
-        'position_type': position_type,
+        'position': position,
         'protocol': protocol
       }
       mon_wallet.add_json_entry(entry)
@@ -65,10 +73,10 @@ def parse_response_and_return_wallet(rjson,origine="simple"):
       continue
   return mon_wallet
 
-def get_evm_wallet(account,refresh=False):
-  refresh_file = "zerion_"+account+".json"
+def get_evm_wallet(account,refresh=False,positions="only_simple"):
+  refresh_file = f"{data_dir}zerion_{positions}_{account}.json"
   resultat = {}
-  url_suffixe = account+"/positions/?filter[positions]=only_simple&currency=usd&filter[trash]=only_non_trash&sort=value"
+  url_suffixe = account+"/positions/?filter[positions]="+positions+"&currency=usd&filter[trash]=only_non_trash&sort=value"
   url = "https://api.zerion.io/v1/wallets/" + url_suffixe
   parameters = {
   }
@@ -87,29 +95,12 @@ def get_evm_wallet(account,refresh=False):
     c.save_to_file(refresh_file,rjson)
   elif 'data' not in rjson:
     raise Exception(f"no data for {account} {rjson}")
-  resultat = parse_response_and_return_wallet(rjson['data'])
+  if positions == "only_simple":
+    resultat = parse_response_and_return_wallet(rjson['data'])
+  else:
+    resultat = parse_response_and_return_wallet(rjson['data'],"complexe")
   return resultat
 
 def get_evm_complex_wallet(account,refresh=False):
-  refresh_file = "zerion_complex_"+account+".json"
-  resultat = {}
-  url_suffixe = account+"/positions/?filter[positions]=only_complex&currency=usd&filter[trash]=only_non_trash&sort=value"
-  url = "https://api.zerion.io/v1/wallets/" + url_suffixe
-  parameters = {
-  }
-  headers = {
-    'Accepts': 'application/json',
-    "authorization": "Basic "+zerion_api_key
-  }
-  if refresh:
-    rjson =  get_with_parameters(url,parameters,headers)
-    if 'data' in rjson:
-      c.save_to_file(refresh_file,rjson)
-  elif os.path.isfile(refresh_file):
-    rjson = c.load_file(refresh_file)
-  else:
-    rjson =  get_with_parameters(url,parameters,headers)
-    if 'data' in rjson:
-      c.save_to_file(refresh_file,rjson)
-  resultat = parse_response_and_return_wallet(rjson['data'],"complexe")
+  resultat = get_evm_wallet(account,refresh,"only_complex")
   return resultat

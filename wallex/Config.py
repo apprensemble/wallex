@@ -12,7 +12,10 @@ class Config:
         self.logger = Logger.Logger()
 
         self.config_file = config_file
-        self.cmc_file = config_file['infos_globale']['cmc_file']
+        self.wallex_common_data_dir = config_file['infos_globale']['wallex_common_data_dir']
+        self.wallex_csv_dir = config_file['infos_globale']['wallex_csv_dir']
+        self.wallex_config_dir = config_file['infos_globale']['wallex_config_dir']
+        self.cmc_file = f"{self.wallex_common_data_dir}{config_file['infos_globale']['cmc_file']}"
         self.cmc_api_key = config_file['private_keys']['cmc_api_key']
         self.moralis_api_key = config_file['private_keys']['moralis_api_key']
         self.zerion_api_key = config_file['private_keys']['zerion_api_key']
@@ -22,7 +25,6 @@ class Config:
         self.btc_wallets = config_file['public_keys']['btc']
         self.svm_main_symbols = config_file['infos_globale']['main_svm_symbols']
         self.evm_main_symbols = config_file['infos_globale']['main_evm_symbols']
-        self.home_data = config_file['infos_globale']['home_data']
 
         self.cmc = Cmc.Cmc(self.cmc_file,self.cmc_api_key)
 

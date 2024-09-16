@@ -58,11 +58,11 @@ class Token:
         if 'protocol' in entry:
             self.protocol = entry['protocol']
         else:
-            self.protocol = 'aucun_protocol'
-        if 'position_type' in entry:
-            self.position_type = entry['position_type']
+            self.protocol = 'libre'
+        if 'position' in entry:
+            self.position = entry['position']
         else:
-            self.position_type = 'wallet'
+            self.position = 'wallet'
         if 'origine' in entry:
             self.origine = entry['origine']
         else:
@@ -77,8 +77,8 @@ class Token:
             print("Missing exchange rate")
 
     def sum_token_values(self,new_token):
-        if self.id == new_token.id and self.blockchain == new_token.blockchain and self.position_type == new_token.position_type:
-            self.native_balance += new_token.native_value
+        if self.id == new_token.id and self.blockchain == new_token.blockchain and self.position == new_token.position:
+            self.native_balance += new_token.native_balance
         self.compute_usd_balance()
 
     def add_exchange_rate(self,exchange_rate):
@@ -96,7 +96,7 @@ class Token:
             pass
     
     def is_same_position(self,token):
-        if self.id == token.id and self.blockchain == token.blockchain and self.position_type == token.position_type:
+        if self.id == token.id and self.blockchain == token.blockchain and self.position == token.position:
             return True
         else:
             return False
