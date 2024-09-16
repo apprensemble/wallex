@@ -40,6 +40,9 @@ def get_spl_tokens_balance_from_moralis(api_key,account):
             'blockchain': "Solana",
             'type': "SVM",
             'doublons': doublons,
+            'origine': 'simple',
+            'protocol': 'libre',
+            'position': 'wallet',
             'contract_address': element['associatedTokenAddress']
         }
         if doublons:
@@ -53,6 +56,9 @@ def get_sol_balance_from_moralis(api_key,account):
         'name': "Solana",
         'native_balance': 0.0,
         'blockchain': "Solana",
+        'origine': 'simple',
+        'protocol': 'libre',
+        'position': 'wallet',
         'type': "SVM"
     }
 

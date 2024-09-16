@@ -65,6 +65,7 @@ class WalletManager:
       mon_wallet.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
       mon_wallet2.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
       mon_wallet3 = self.fusion_wallets_1_2_in_a_third_named(mon_wallet,mon_wallet2,wallet)
+      self.update_tokens_datas_for_wallet_via_default_tags(mon_wallet3)
       mes_wallets.update({wallet:mon_wallet3})
 
       self.mes_wallets = mes_wallets
@@ -98,6 +99,28 @@ class WalletManager:
     scraper = Scraper.Scraper()
     scraper.get_balances_bitcoin_from_mempool(c.config_file['public_keys']['btc'])
     self.scraper = Scraper.Scraper()
+
+  def is_token_in_strategie_tag(self,token_symbol:str,strategie:str):
+    if token_symbol in self.tags[strategie]['tokens']:
+      return True
+    else:
+      return False
+  
+  def is_token_in_strategie_tags(self,token_symbol:str,strategies: list):
+    for strategie in strategies:
+      if token_symbol in self.tags[strategie]['tokens']:
+        return True
+      else:
+        return False
+
+  def get_strategie_names_for_token_in_strategie_tags(self,token_symbol:str,strategies: list):
+    names = []
+    for strategie in strategies:
+      if token_symbol in self.tags[strategie]['tokens']:
+        names.append(strategie)
+    return names
+
+
 
 
   def get_tokens_by_strategie_for_specified_wallet(self,strategie,wallet:Wallet.Tokens):
@@ -147,6 +170,37 @@ class WalletManager:
             resultat.update({token:round(sum[token],2)})
     return resultat
 
+  def update_tokens_datas_for_wallet_via_default_tags(self,wallet:Wallet.Tokens):
+    jwallet = wallet.get_detailled_tokens_infos_by_blockchain()
+    new_wallet = Wallet.Tokens()
+    for bc in jwallet:
+      for tokens in jwallet[bc]:
+          for token in tokens.keys():
+            if self.is_token_in_strategie_tag(token,"hold"):
+              tokens[token]['vision'] = 'hold'
+            else:
+              tokens[token]['vision'] = 'trade'
+            famille = self.get_strategie_names_for_token_in_strategie_tags(token,['BTC','ETH','SOL','stablecoin'])
+            if len(famille) > 1:
+              tokens[token]['famille'] = 'famille_multiple'
+            elif len(famille) == 0:
+              tokens[token]['famille'] = 'autre'
+            else:
+              tokens[token]['famille'] = famille.pop()
+            if 'protocol' in tokens[token]:
+              if tokens[token]['protocol'] != "libre":
+                tokens[token]['strategie'] = 'invested'
+              elif (tokens[token]['vision'] != 'trade' or tokens[token]['famille'] != 'autre' or self.is_token_in_strategie_tag(token,"suivi")):
+                tokens[token]['strategie'] = 'suivi'
+              else:
+                tokens[token]['strategie'] = 'non_suivi'
+            else:
+              tokens[token]['protocol'] = 'protocol_oublié'
+            new_wallet.add_json_entry(tokens[token])
+    new_wallet.name = wallet.name
+    self.mes_wallets.update({new_wallet.name:new_wallet})
+    return new_wallet
+
 
   def fusion_wallets_1_2_in_a_third_named(self,wallet1:Wallet.Tokens,wallet2:Wallet.Tokens,nom_wallet_final:str):
     jwallet1 = wallet1.get_detailled_tokens_infos_by_blockchain()
@@ -188,6 +242,7 @@ class WalletManager:
       mon_wallet = Wallet.Tokens()
       mon_wallet.add_json_entries_from_multi_blockchain(wallets[wallet])
       mon_wallet.name = wallet
+      mon_wallet = self.update_tokens_datas_for_wallet_via_default_tags(mon_wallet)
       self.mes_wallets.update({mon_wallet.name:mon_wallet})
 
   def save_exported_wallets(self,filename="custom_wallets.json"):
@@ -236,21 +291,21 @@ class WalletManager:
     except Exception as e:
       print(e)
 
-  def get_flexible_yield(self,tags_list:list=[]):
-    flexible_yield = {}
+  def get_flexible_tags(self,tags_list:list=[]):
+    flexible_tags = {}
     for s in tags_list:
-      flexible_yield.update({s:sum(self.get_tokens_by_strategie(s).values())})
-    return flexible_yield
+      flexible_tags.update({s:sum(self.get_tokens_by_strategie(s).values())})
+    return flexible_tags
 
 
   def get_portfolio_composition_by_type(self):
     tokens_suivi = []
     hold = sum(self.get_tokens_by_strategie("hold").values())
     tokens_suivi.extend(list(self.get_tokens_by_strategie("hold").keys()))
-    flexible_yield = 0
-    for s in self.get_flexible_yield().keys():
+    flexible_tags = 0
+    for s in self.get_flexible_tags().keys():
       categories = self.get_tokens_by_strategie(s)
-      flexible_yield +=  sum(categories.values())
+      flexible_tags +=  sum(categories.values())
       tokens_suivi.extend(list(categories.keys()))
     step = self.get_tokens_by_strategie("locked")
     locked = sum(step.values())
@@ -264,7 +319,7 @@ class WalletManager:
     for token in all_tokens:
       if token not in tokens_suivi:
         non_suivi += all_tokens[token]
-    resultat = {'hold':hold,'flexible_yield':flexible_yield,'locked':locked,'stablecoin':stablecoin,'non_suvi':round(non_suivi,2)}
+    resultat = {'hold':hold,'flexible_tags':flexible_tags,'locked':locked,'stablecoin':stablecoin,'non_suvi':round(non_suivi,2)}
     return resultat
 
   def get_tokens_non_suivi(self):
@@ -272,9 +327,9 @@ class WalletManager:
     lts = []
     tokens_non_suivi = {}
     # la famille des tokens suivis est hold, locked, stablecoin et flexible yield.
-    for f in ['hold','flexible_yield','locked','stablecoin']:
-      if f == 'flexible_yield':
-        for g in list(self.get_flexible_yield().keys()):
+    for f in ['hold','flexible_tags','locked','stablecoin']:
+      if f == 'flexible_tags':
+        for g in list(self.get_flexible_tags().keys()):
           lts.extend(list(self.get_tokens_by_strategie(g).keys()))
       else:
         lts.extend(list(self.get_tokens_by_strategie(f).keys()))

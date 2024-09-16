@@ -38,7 +38,7 @@ class TimeSeriesManager():
 
     return result
 
-  def get_dataset_from_strategie(self,strategie:str):
+  def get_dataset_from_strategie(self,strategie:str,tags_list=[]):
     # a titre d'exemple
   #  dataset = {
   #      "labels": [
@@ -58,8 +58,8 @@ class TimeSeriesManager():
       tokens = wm.get_global_summarized_tokens()
     elif strategie.lower() == "composition":
       tokens = wm.get_portfolio_composition_by_type()
-    elif strategie.lower() == "flexible_yield":
-      tokens = wm.get_flexible_yield() 
+    elif strategie.lower() == "flexible_tags":
+      tokens = wm.get_flexible_tags(tags_list) 
     elif strategie.lower() == "by_wallet":
       tokens = wm.get_total_by_wallet()
     elif strategie.lower() == "non_suivis" or strategie.lower() == "non_suivi":
@@ -108,8 +108,8 @@ class TimeSeriesManager():
 
   def fill_dfp_for_token(self,check,token):
     famille = ['stablecoin','ETH','BTC','SOL']
-    flexible_yield = self.get_dataset_from_strategie("flexible_yield")['labels']
-    all_yield = flexible_yield
+    flexible_tags = self.get_dataset_from_strategie("flexible_tags")['labels']
+    all_yield = flexible_tags
     all_yield.append('locked')
     dfp = {'famille':[],'strategie':[],'vision':[]}
     r = 'autre'
@@ -166,14 +166,9 @@ class TimeSeriesManager():
               dfp['usd_balance'].append(0)
             dfp['position'].append(tokens[token]['position'])
             dfp['protocol'].append(tokens[token]['protocol'])
-            if check(token,'non_suivi') and tokens[token]['protocol'] == 'libre':
-              dfp['famille'].append('autre')
-              dfp['strategie'].append('non_suivi')
-              dfp['vision'].append('trade')
-            else:
-              dfps = self.fill_dfp_for_token(check,token)
-              for i in dfps:
-                dfp[i].append(dfps[i])
+            dfp['famille'].append(tokens[token]['famille'])
+            dfp['strategie'].append(tokens[token]['strategie'])
+            dfp['vision'].append(tokens[token]['vision'])
     for i in dfp:
       print(i,(len(dfp[i])))
     df = pd.DataFrame(dfp)
@@ -202,14 +197,9 @@ class TimeSeriesManager():
               dfp['exchange_rate'].append(tokens[token]['exchange_rate'])
             dfp['position'].append(tokens[token]['position'])
             dfp['protocol'].append(tokens[token]['protocol'])
-            if check(token,'non_suivi'):
-              dfp['famille'].append('autre')
-              dfp['strategie'].append('non_suivi')
-              dfp['vision'].append('trade')
-            else:
-              dfps = self.fill_dfp_for_token(check,token)
-              for i in dfps:
-                dfp[i].append(dfps[i])
+            dfp['famille'].append(tokens[token]['famille'])
+            dfp['strategie'].append(tokens[token]['strategie'])
+            dfp['vision'].append(tokens[token]['vision'])
     for i in dfp:
       print(i,(len(dfp[i])))
     df = pd.DataFrame(dfp)

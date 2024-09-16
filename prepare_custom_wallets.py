@@ -48,8 +48,10 @@ def create_custom_wallets_file(filename):
     if len(token.split("_")) > 1:
       protocol = token.split("_")[0]
       strategie = "invested"
-    if "TOKEN" in tags and len(tags) < 2:
+    elif "TOKEN" in tags and len(tags) < 2:
       strategie = "non_suivi"
+    else:
+      strategie = "suivi"
     blockchain = blockchain.capitalize()
     if wallet in custom_wallet_file.keys():
       if blockchain in custom_wallet_file[wallet].keys():

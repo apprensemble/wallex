@@ -67,6 +67,20 @@ class Token:
             self.origine = entry['origine']
         else:
             self.origine = "simple"
+        if 'vision' in entry:
+            self.vision = entry['vision']
+        else:
+            self.vision = "trade"
+        if 'famille' in entry:
+            self.famille = entry['famille']
+        else:
+            self.famille = "autre"
+        if 'strategie' in entry:
+            self.strategie = entry['strategie']
+        else:
+            self.strategie = "non_suivi"
+
+
 
     def compute_usd_balance(self):
         try:

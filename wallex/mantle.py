@@ -41,6 +41,9 @@ def get_native_balance_from_blockscout(account) -> dict:
     'native_balance': 0.0,
     'blockchain': "mantle".capitalize(),
     'decimals': 18,
+    'origine': 'simple',
+    'protocol': 'libre',
+    'position': 'wallet',
     'type': "EVM"
   }
   url = "https://explorer.mantle.xyz/api"
@@ -86,6 +89,9 @@ def parse_response_from_blockscout(rjson):
         'native_balance': native_balance,
         'usd_balance': round(usd_balance,2),
         'blockchain': "mantle".capitalize(),
+        'origine': 'simple',
+        'protocol': 'libre',
+        'position': 'wallet',
         'type': "EVM",
         'exchange_rate': float(entry['token']['exchange_rate'])
       }
