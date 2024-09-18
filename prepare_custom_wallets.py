@@ -7,7 +7,7 @@ config_dir = c.wallex_config_dir
 csv_preparation_file = f"{config_dir}extra_position.txt"
 manual_tags_file = f"{config_dir}tags.json"
 auto_tags_file = f"{wallex_common_data_dir}tags.json"
-custom_wallets_file = f"{config_dir}custom_wallets_.json"
+custom_wallets_file = f"{wallex_common_data_dir}custom_wallets_.json"
 resultat = [[x for x in line.split(":")] for line in open(csv_preparation_file) if len(line) > 1 and "#" not in line]
 def create_tags_file(filename):
   #take lines
@@ -45,9 +45,15 @@ def create_custom_wallets_file(filename):
   for tags_,wallet,blockchain,token,native_balance,usd_balance,exchange_rate in resultat:
     tags = tags_.split("_")
     protocol = 'libre'
-    if len(token.split("_")) > 1:
+    position = "wallet"
+    if len(token.split("_")) > 2:
       protocol = token.split("_")[0]
       strategie = "invested"
+      position = "deposit"
+    elif len(token.split("_")) > 1:
+      protocol = token.split("_")[0]
+      strategie = "invested"
+      position = "staked"
     elif "TOKEN" in tags and len(tags) < 2:
       strategie = "non_suivi"
     else:
@@ -55,7 +61,7 @@ def create_custom_wallets_file(filename):
     blockchain = blockchain.capitalize()
     if wallet in custom_wallet_file.keys():
       if blockchain in custom_wallet_file[wallet].keys():
-        custom_wallet_file[wallet][blockchain].update({token:{ "id":token, "name":token, "symbol":token, "native_balance":native_balance, "exchange_rate":exchange_rate.split("\n")[0], "usd_balance":usd_balance, "type":"Custom", "blockchain":blockchain,"origine":"manuelle","strategie": strategie,"protocol":protocol }}) 
+        custom_wallet_file[wallet][blockchain].update({token:{ "id":token, "name":token, "symbol":token, "native_balance":native_balance, "exchange_rate":exchange_rate.split("\n")[0], "usd_balance":usd_balance, "type":"Custom", "blockchain":blockchain,"origine":"manuelle","strategie": strategie,"protocol":protocol,"position":position }}) 
       else:
         custom_wallet_file[wallet][blockchain] = {
       token:{
@@ -68,6 +74,7 @@ def create_custom_wallets_file(filename):
         "type":"Custom",
         "blockchain":blockchain,
         "protocol": protocol,
+        "position": position,
         "strategie": strategie,
         "origine": "manuelle" }}
     else:
@@ -83,6 +90,7 @@ def create_custom_wallets_file(filename):
         "type":"Custom",
         "blockchain":blockchain,
         "protocol": protocol,
+        "position": position,
         "strategie": strategie,
         "origine": "manuelle"
   }}}
