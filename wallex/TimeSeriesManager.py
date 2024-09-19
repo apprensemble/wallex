@@ -4,13 +4,17 @@ import time
 
 class TimeSeriesManager():
 
-  def __init__(self):
+  def __init__(self,init_default_wallet=True,refresh_quotes=False):
     self.c = Config.Config()
-    wallet_file = f"{self.c.wallex_common_data_dir}all_my_wallets.json"
-    self.parsed_quotes = self.c.cmc.get_parsed_quotes()
-    wm = WalletManager.WalletManager()
-    wm.import_custom_wallets_from_json_file(wallet_file)
-    self.wm = wm
+    self.parsed_quotes = self.c.cmc.get_parsed_quotes(refresh_quotes)
+    self.wm = WalletManager.WalletManager()
+    if init_default_wallet:
+      wallet_file = f"{self.c.wallex_common_data_dir}all_my_wallets.json"
+      self.wm.import_custom_wallets_from_json_file(wallet_file)
+
+  def init_json_wallets(self,json_filename,refresh_quotes=False):
+    self.parsed_quotes = self.c.cmc.get_parsed_quotes(refresh_quotes)
+    self.wm.import_custom_wallets_from_json_file(json_filename)
   
   def get_apr_for_amount_in_given_time(self,apr:float,amount:float,step:str):
     '''

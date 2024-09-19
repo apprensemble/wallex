@@ -124,7 +124,7 @@ class Tokens:
 
     def remove_token_from_blockchain(self,symbol,blockchain):
         removed_symbol = ""
-        symbol = symbol.upper()
+        #symbol = symbol.upper()
         try:
             if symbol in self.entries[blockchain].keys():
                 removed_symbol = self.entries[blockchain].pop(symbol)
@@ -234,3 +234,40 @@ class Tokens:
         else:
             resultat = tokens
         return resultat
+
+    def rename_token_in_blockchain(self,old_token_name,new_token_name,blockchain):
+       if blockchain in self.entries:
+            if old_token_name in self.entries[blockchain]:
+                self.entries[blockchain][new_token_name] = self.entries[blockchain][old_token_name]
+                self.remove_token_from_blockchain(old_token_name,blockchain)
+                return True
+       return False
+
+
+    def change_symbol1_to_symbol2_on_blockchain_for_token_name(self,symbol1,symbol2,blockchain,token_name):
+        if blockchain in self.entries:
+            if symbol1 in self.entries[blockchain]:
+                if token_name in self.entries[blockchain][symbol1].name:
+                   self.entries[blockchain][symbol1].symbol = symbol2
+                   self.entries[blockchain][symbol1].id = symbol2
+                   self.rename_token_in_blockchain(symbol1,symbol2,blockchain)
+                   return True
+        return False
+
+    def change_symbol1_to_symbol2_on_blockchain_for_complexe_token_name(self,symbol1,symbol2,blockchain,complexe_token_name):
+        resultat = False
+        tokens_to_rename = {}
+        if blockchain in self.entries:
+                for element in self.entries[blockchain].keys():
+                    if symbol1 in element:
+                        if complexe_token_name in element:
+                            old_name = self.entries[blockchain][element].symbol
+                            new_name = self.entries[blockchain][element].symbol.replace(f"_{symbol1}",f"_{symbol2}")
+                            self.entries[blockchain][element].symbol = new_name
+                            self.entries[blockchain][element].id = new_name
+                            tokens_to_rename.update({old_name:new_name})
+                            resultat = True
+        if resultat == True:
+            self.rename_token_in_blockchain(old_name,new_name,blockchain)
+        return resultat
+         

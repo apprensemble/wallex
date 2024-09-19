@@ -19,14 +19,34 @@ class WalletManager:
   def call_refresh_quotes(self):
     self.parsed_quotes = self.config.cmc.get_parsed_quotes(True)
 
-  def add_wallet(self,account,name,refresh_quotes=False):
+  def add_evm_wallet(self,account,name,refresh_quotes=False):
     if refresh_quotes:
       self.call_refresh_quotes()
     parsed_quotes = self.parsed_quotes
 
     mon_wallet = zerion.get_evm_wallet(account)
+    mon_wallet2 = zerion.get_evm_complex_wallet(account,refresh_quotes)
     mon_wallet.name = name
+    mon_wallet2.name = name
+    if 'Mantle' not in mon_wallet.entries.keys():
+      mon_wallet.add_json_entry(mantle.get_native_balance_from_blockscout(account))
+      mon_wallet.add_json_entries(mantle.get_tokens_balance_from_blockscout(account))
+    mon_wallet3 = self.fusion_wallets_1_2_in_a_third_named(mon_wallet,mon_wallet2,name)
+    mon_wallet3.change_symbol1_to_symbol2_on_blockchain_for_token_name('VELO','VELO2','Optimism','Velodrome')
+    mon_wallet3.change_symbol1_to_symbol2_on_blockchain_for_complexe_token_name('VELO','VELO2','Optimism','Velodrome')
+    mon_wallet3.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
+    self.update_tokens_datas_for_wallet_via_default_tags(mon_wallet3)
+
+  def add_svm_wallet(self,account,name,refresh_quotes=False):
+    if refresh_quotes:
+      self.call_refresh_quotes()
+    parsed_quotes = self.parsed_quotes
+    mon_wallet = Wallet.Tokens(name)
+    mon_wallet.add_json_entry(solana.get_sol_balance_from_moralis(self.config.moralis_api_key, account))
+    mon_wallet.add_json_entries(solana.get_spl_tokens_balance_from_moralis(self.config.moralis_api_key, account))
+    mon_wallet.remove_token_from_blockchain('PYTH','Solana')
     mon_wallet.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
+    self.update_tokens_datas_for_wallet_via_default_tags(mon_wallet)
     self.mes_wallets.update({mon_wallet.name:mon_wallet})
 
 # Note pour plus tard penser à faire une fonction de remplacement du symbol lorsque l'on souhaite le moins populaire.
@@ -38,49 +58,23 @@ class WalletManager:
 
   def fulfill_wallet_manager(self,refresh_quotes=False):
     c = self.config
+    self.create_custom_tags_and_custom_wallets()
     if refresh_quotes:
       self.call_refresh_quotes()
-    parsed_quotes = self.parsed_quotes
-    mes_wallets = {}
-    # patch : symbol à changer pour moi mais à l'avenir j'aimerais que les doublons puissent etre decidé pour chaque blockchain depuis une interface.
-    symbol_a_changer = {'VELO':'VELO2'}
-    changement = lambda blockchain_result,symbol_a_changer: {token:{'id':obj['id'] if obj['id'] not in symbol_a_changer.keys() else symbol_a_changer[obj['id']], 'name':obj['name'],'symbol':obj['symbol'] , 'contract_address':obj['contract_address'], 'native_balance':obj['native_balance'], 'usd_balance':obj['usd_balance'], 'blockchain':obj['blockchain'], 'type':obj['type'], 'exchange_rate':obj['exchange_rate']}for token,obj in blockchain_result.items()}
     for wallet in c.svm_wallets:
-      mon_wallet = Wallet.Tokens(wallet)
-      mon_wallet.add_json_entries(solana.get_spl_tokens_balance_from_moralis(c.moralis_api_key,c.svm_wallets[wallet]))
-      mon_wallet.add_json_entry(solana.get_sol_balance_from_moralis(c.moralis_api_key,c.svm_wallets[wallet]))
-      # un fake pyth casse mes stats. Je ne retire pas les scams des fois qu'ils pump sur un malentendu
-      mon_wallet.remove_token_from_blockchain('PYTH','Solana')
-      mon_wallet.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
-      mes_wallets.update({wallet:mon_wallet})
+      self.add_svm_wallet(c.svm_wallets[wallet],wallet,refresh_quotes)
     for wallet in c.evm_wallets:
-      mon_wallet = zerion.get_evm_wallet(c.evm_wallets[wallet],refresh_quotes)
-      mon_wallet2 = zerion.get_evm_complex_wallet(c.evm_wallets[wallet],refresh_quotes)
-      mon_wallet.name = wallet
-      mon_wallet2.name = wallet
-      if 'Mantle' not in mon_wallet.entries.keys():
-        mon_wallet.add_json_entry(mantle.get_native_balance_from_blockscout(c.evm_wallets[wallet]))
-        mon_wallet.add_json_entries(mantle.get_tokens_balance_from_blockscout(c.evm_wallets[wallet]))
+      self.add_evm_wallet(c.evm_wallets[wallet],wallet,refresh_quotes)
 
-      mon_wallet.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
-      mon_wallet2.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
-      mon_wallet3 = self.fusion_wallets_1_2_in_a_third_named(mon_wallet,mon_wallet2,wallet)
-      self.update_tokens_datas_for_wallet_via_default_tags(mon_wallet3)
-      mes_wallets.update({wallet:mon_wallet3})
-
-      self.mes_wallets = mes_wallets
     # chargement de la partie remplie off chain(non prise en charge par les API comme les lock/stack etc.)
     self.import_custom_wallets_from_json_file(f"{self.wallex_data_dir}custom_wallets_.json")
-    self.fusion_wallets_by_name_1_2_in_3('cwl','CWL','custom_cwl')
     self.fusion_wallets_by_name_1_2_in_3('cwl','CWL','custom_cwl')
     self.fusion_wallets_by_name_1_2_in_3('phantom_sol','PHANTOM_SOL','custom_phantom_sol')
     self.fusion_wallets_by_name_1_2_in_3('binance_evm','BINANCE_EVM','custom_binance_evm')
     self.fusion_wallets_by_name_1_2_in_3('bybit_evm','BYBIT_EVM','custom_bybit_evm')
     #self.fusion_wallets_by_name_1_2_in_3('coinbasewallet','COINBASEWALLET','custom_coinbasewallet')
     self.update_all_my_wallets()
-    psol = self.mes_wallets['custom_phantom_sol']
-    psol.remove_token_from_blockchain("ORCA","Solana")
-    self.mes_wallets['custom_phantom_sol'] = psol
+    self.remove_token_from_wallet_in_blockchain('ORCA','custom_phantom_sol','Solana')
     self.remove_token_from_wallet_in_blockchain('BLOOM','custom_cwl','Base')
     self.remove_token_from_wallet_in_blockchain('BOMB','custom_cwl','Base')
     self.save_my_personal_wallets()
@@ -250,7 +244,7 @@ class WalletManager:
     c.save_to_file(filename,self.wallets_to_export)
 
   def get_list_wallets(self):
-    return self.mes_wallets.keys()
+    return list(self.mes_wallets.keys())
 
   def save_my_personal_wallets(self):
     nom_wallet_cible = self.all_my_personnal_wallets
@@ -339,4 +333,88 @@ class WalletManager:
         tokens_non_suivi[token] = all_tokens[token]
     return tokens_non_suivi
 
+  def get_wallets(self):
+    resultat = {}
+    for wallet in self.mes_wallets:
+      resultat.update({wallet:self.mes_wallets[wallet].get_detailled_tokens_infos_by_blockchain()})
+    return resultat
 
+  def create_custom_tags_and_custom_wallets(self):
+    wallex_common_data_dir = self.config.wallex_common_data_dir
+    config_dir = self.config.wallex_config_dir
+    csv_preparation_file = f"{config_dir}extra_position.txt"
+    manual_tags_file = f"{config_dir}tags.json"
+    auto_tags_file = f"{wallex_common_data_dir}tags.json"
+    custom_wallets_filename = f"{wallex_common_data_dir}custom_wallets_.json"
+    resultat = [[x for x in line.split(":")] for line in open(csv_preparation_file) if len(line) > 1 and "#" not in line]
+
+    tags = self.config.load_file(manual_tags_file)
+    tags = {tag:token['tokens'] for tag,token in tags.items()}
+    for line in resultat:
+      a = {x.lower():[line[3]] for x in line[0].split("_")}
+      for (tag,token) in a.items():
+        if tag in tags.keys():
+          tags[tag].append(token[0])
+        else:
+          tags[tag] = token
+
+    tag_file = { title:{"nom": title, "kind":"strategie", "description":"blabla",
+                    "tokens":list(set(tokens))} for (title,tokens) in tags.items()}
+
+    self.config.save_to_file(auto_tags_file,tag_file)
+
+    custom_wallet_file = {}
+    for tags_,wallet,blockchain,token,native_balance,usd_balance,exchange_rate in resultat:
+      tags = tags_.split("_")
+      protocol = 'libre'
+      position = "wallet"
+      if len(token.split("_")) > 2:
+        protocol = token.split("_")[0]
+        strategie = "invested"
+        position = "deposit"
+      elif len(token.split("_")) > 1:
+        protocol = token.split("_")[0]
+        strategie = "invested"
+        position = "staked"
+      elif "TOKEN" in tags and len(tags) < 2:
+        strategie = "non_suivi"
+      else:
+        strategie = "suivi"
+      blockchain = blockchain.capitalize()
+      if wallet in custom_wallet_file.keys():
+        if blockchain in custom_wallet_file[wallet].keys():
+          custom_wallet_file[wallet][blockchain].update({token:{ "id":token, "name":token, "symbol":token, "native_balance":native_balance, "exchange_rate":exchange_rate.split("\n")[0], "usd_balance":usd_balance, "type":"Custom", "blockchain":blockchain,"origine":"manuelle","strategie": strategie,"protocol":protocol,"position":position }}) 
+        else:
+          custom_wallet_file[wallet][blockchain] = {
+        token:{
+          "id":token,
+          "name":token,
+          "symbol":token,
+          "native_balance":native_balance,
+          "exchange_rate":exchange_rate.split("\n")[0],
+          "usd_balance":usd_balance,
+          "type":"Custom",
+          "blockchain":blockchain,
+          "protocol": protocol,
+          "position": position,
+          "strategie": strategie,
+          "origine": "manuelle" }}
+      else:
+        custom_wallet_file[wallet] = {
+      blockchain:{
+        token:{
+          "id":token,
+          "name":token,
+          "symbol":token,
+          "native_balance":native_balance,
+          "exchange_rate":exchange_rate.split("\n")[0],
+          "usd_balance":usd_balance,
+          "type":"Custom",
+          "blockchain":blockchain,
+          "protocol": protocol,
+          "position": position,
+          "strategie": strategie,
+          "origine": "manuelle"
+    }}}
+    self.config.save_to_file(custom_wallets_filename,custom_wallet_file)
+    return custom_wallet_file 
