@@ -1,4 +1,6 @@
 from wallex import Token,solana,Wallet,Config,Scraper,zerion,mantle,Logger
+import pandas as pd
+import time
 
 class WalletManager:
   mes_wallets: dict[str:Wallet.Tokens]
@@ -338,6 +340,55 @@ class WalletManager:
     for wallet in self.mes_wallets:
       resultat.update({wallet:self.mes_wallets[wallet].get_detailled_tokens_infos_by_blockchain()})
     return resultat
+
+  def convert_complete_csv_wallets_to_json_file(self,input_filename,output_filename='wallet_from_csv.json'):
+    df = pd.read_csv(input_filename)
+    wallets_from_csv = {}
+    for i,ligne in df.iterrows():
+      wallet = ligne['wallet']
+      blockchain = ligne['bc']
+      token = ligne['token']
+      if 'id_token' in ligne:
+        id_token = ligne['id_token']
+      else:
+        id_token = token
+      if 'token_full_name' in ligne:
+        name = ligne['token_full_name']
+      else:
+        name = token
+      exchange_rate = ligne['exchange_rate']
+      native_balance = ligne['native_balance']
+      usd_balance = ligne['usd_balance']
+      famille = ligne['famille']
+      strategie = ligne['strategie']
+      vision = ligne['vision']
+      origine = "csv"
+      position = ligne['position']
+      if 'protocol' in ligne:
+        protocol = ligne['protocol']
+      else:
+        protocol = 'A DEFINIR'
+      if 'ref_exchange_rate' in ligne:
+        ref_exchange_rate = ligne['ref_exchange_rate']
+      else:
+        ref_exchange_rate = exchange_rate
+      if 'ref_date_comparaison' in ligne:
+        ref_date_comparaison = ligne['ref_date_comparaison']
+      else:
+        ref_date_comparaison = time.time()
+
+
+
+      if wallet not in wallets_from_csv:
+        wallets_from_csv[wallet] = {}
+      if blockchain not in wallets_from_csv[wallet]:
+        wallets_from_csv[wallet][blockchain] = {}
+      wallets_from_csv[wallet][blockchain].update({token:{ "id":id_token, "name":name, "symbol":token, "native_balance":native_balance, "exchange_rate":exchange_rate,"ref_exchange_rate":ref_exchange_rate,"ref_date_comparaison":ref_date_comparaison, "usd_balance":usd_balance, "type":"Custom", "blockchain":blockchain,"origine":origine,"famille":famille,"vision":vision,"strategie": strategie,"protocol":protocol,"position":position }})
+      self.config.save_to_file(output_filename,wallets_from_csv)
+
+
+
+    
 
   def create_custom_tags_and_custom_wallets(self):
     wallex_common_data_dir = self.config.wallex_common_data_dir
