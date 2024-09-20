@@ -1,5 +1,5 @@
 from typing import Any
-import json
+import time
 
 
 class Token:
@@ -80,6 +80,19 @@ class Token:
         else:
             self.strategie = "non_suivi"
 
+        if not self.missing_exchange_rate:
+            if 'ref_exchange_rate' in entry:
+                self.ref_exchange_rate = entry['ref_exchange_rate']
+            else:
+                self.ref_exchange_rate = entry['exchange_rate']
+            if 'ref_date_comparaison' in entry:
+                self.ref_date_comparaison = entry['ref_date_comparaison']
+            else:
+                self.ref_date_comparaison = time.time()
+        else:
+            self.ref_exchange_rate = None
+            self.ref_date_comparaison = None
+
 
 
     def compute_usd_balance(self):
@@ -114,5 +127,14 @@ class Token:
             return True
         else:
             return False
+
+    def add_ref_values(self,ref_exchange_rate,ref_date_comparaison):
+        self.ref_exchange_rate = ref_exchange_rate
+        self.ref_date_comparaison = ref_date_comparaison
+
+    def copy_ref_values(self,token):
+        self.add_ref_values(token.ref_exchange_rate,token.ref_date_comparaison)
+        
+
 
         

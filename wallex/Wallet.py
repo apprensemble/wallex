@@ -12,7 +12,7 @@ class Tokens:
         self.name = name
         self.balance_by_blockchain = {}
 
-    def add_entry_(self,token: Token.Token):
+    def add_entry(self,token: Token.Token):
         try:
             self.entries[token.blockchain][token.id] = token
         except KeyError:
@@ -20,7 +20,7 @@ class Tokens:
             self.entries[token.blockchain][token.id] = token
         return self.entries
 
-    def add_entry(self,token: Token.Token):
+    def add_entry_(self,token: Token.Token):
         try:
             if token.id not in self.entries[token.blockchain]:
                 self.entries[token.blockchain][token.id] = token
@@ -65,6 +65,20 @@ class Tokens:
                 self.add_entry(Token.Token(entries[entry]))
 
     def add_json_entry(self,entry):
+        blockchain = entry['blockchain']
+        id = entry['id']
+        try:
+            if blockchain in self.entries and id in self.entries[blockchain]:
+                new_entry_token = Token.Token(entry)
+                self.entries[blockchain][id] = new_entry_token
+            else:
+                self.entries[blockchain][id] = Token.Token(entry)
+        except KeyError:
+            self.entries[blockchain] = {}
+            self.entries[blockchain][id] = Token.Token(entry)
+        return self.entries
+
+    def add_json_entry_(self,entry):
         blockchain = entry['blockchain']
         id = entry['id']
         try:

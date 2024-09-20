@@ -1,4 +1,5 @@
 from wallex import Token,solana,Wallet,Config,Scraper,zerion,mantle,Logger
+import copy
 import pandas as pd
 import time
 
@@ -26,7 +27,7 @@ class WalletManager:
       self.call_refresh_quotes()
     parsed_quotes = self.parsed_quotes
 
-    mon_wallet = zerion.get_evm_wallet(account)
+    mon_wallet = zerion.get_evm_wallet(account,refresh_quotes)
     mon_wallet2 = zerion.get_evm_complex_wallet(account,refresh_quotes)
     mon_wallet.name = name
     mon_wallet2.name = name
@@ -49,7 +50,6 @@ class WalletManager:
     mon_wallet.remove_token_from_blockchain('PYTH','Solana')
     mon_wallet.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
     self.update_tokens_datas_for_wallet_via_default_tags(mon_wallet)
-    self.mes_wallets.update({mon_wallet.name:mon_wallet})
 
 # Note pour plus tard penser à faire une fonction de remplacement du symbol lorsque l'on souhaite le moins populaire.
 # certainenement à faire par blockchain et par wallet. Depuis le fichier de config ou un autre.
@@ -64,9 +64,10 @@ class WalletManager:
     if refresh_quotes:
       self.call_refresh_quotes()
     for wallet in c.svm_wallets:
-      self.add_svm_wallet(c.svm_wallets[wallet],wallet,refresh_quotes)
+      self.call_add_svm_and_keep_ref_value(c.svm_wallets[wallet],wallet,refresh_quotes)
     for wallet in c.evm_wallets:
-      self.add_evm_wallet(c.evm_wallets[wallet],wallet,refresh_quotes)
+      #self.add_evm_wallet(c.evm_wallets[wallet],wallet,refresh_quotes)
+      self.call_add_evm_and_keep_ref_value(c.evm_wallets[wallet],wallet,refresh_quotes)
 
     # chargement de la partie remplie off chain(non prise en charge par les API comme les lock/stack etc.)
     self.import_custom_wallets_from_json_file(f"{self.wallex_data_dir}custom_wallets_.json")
@@ -341,7 +342,7 @@ class WalletManager:
       resultat.update({wallet:self.mes_wallets[wallet].get_detailled_tokens_infos_by_blockchain()})
     return resultat
 
-  def convert_complete_csv_wallets_to_json_file(self,input_filename,output_filename='wallet_from_csv.json'):
+  def convert_complete_csv_wallets_to_json_file(self,input_filename,output_filename='wallet_from_csv.json',ref_date=time.time()):
     df = pd.read_csv(input_filename)
     wallets_from_csv = {}
     for i,ligne in df.iterrows():
@@ -375,7 +376,7 @@ class WalletManager:
       if 'ref_date_comparaison' in ligne:
         ref_date_comparaison = ligne['ref_date_comparaison']
       else:
-        ref_date_comparaison = time.time()
+        ref_date_comparaison = ref_date
 
 
 
@@ -385,6 +386,39 @@ class WalletManager:
         wallets_from_csv[wallet][blockchain] = {}
       wallets_from_csv[wallet][blockchain].update({token:{ "id":id_token, "name":name, "symbol":token, "native_balance":native_balance, "exchange_rate":exchange_rate,"ref_exchange_rate":ref_exchange_rate,"ref_date_comparaison":ref_date_comparaison, "usd_balance":usd_balance, "type":"Custom", "blockchain":blockchain,"origine":origine,"famille":famille,"vision":vision,"strategie": strategie,"protocol":protocol,"position":position }})
       self.config.save_to_file(output_filename,wallets_from_csv)
+
+
+  def call_add_evm_and_keep_ref_value(self,account,name,refresh_quote=False):
+    if name in self.mes_wallets:
+      old_wallet = copy.deepcopy(self.mes_wallets[name])
+    elif f"custom_{name}" in self.mes_wallets:
+      old_wallet = copy.deepcopy(self.mes_wallets[f"custom_{name}"])
+    else:
+      old_wallet = None
+    self.add_evm_wallet(account,name,refresh_quote)
+    if old_wallet:
+      new_wallet: Wallet.Tokens = self.mes_wallets[name]
+      for blockchain in new_wallet.entries:
+        for token in new_wallet.entries[blockchain]:
+          if blockchain in old_wallet.entries:
+            if token in old_wallet.entries[blockchain]:
+              new_wallet.entries[blockchain][token].copy_ref_values(old_wallet.entries[blockchain][token])
+
+  def call_add_svm_and_keep_ref_value(self,account,name,refresh_quote=False):
+    if name in self.mes_wallets:
+      old_wallet = copy.deepcopy(self.mes_wallets[name])
+    elif f"custom_{name}" in self.mes_wallets:
+      old_wallet = copy.deepcopy(self.mes_wallets[f"custom_{name}"])
+    else:
+      old_wallet = None
+    self.add_svm_wallet(account,name,refresh_quote)
+    if old_wallet:
+      new_wallet: Wallet.Tokens = self.mes_wallets[name]
+      for blockchain in new_wallet.entries:
+        for token in new_wallet.entries[blockchain]:
+          if blockchain in old_wallet.entries:
+            if token in old_wallet.entries[blockchain]:
+              new_wallet.entries[blockchain][token].copy_ref_values(old_wallet.entries[blockchain][token])
 
 
 
