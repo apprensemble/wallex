@@ -16,8 +16,14 @@ class WalletManager:
     self.tags = self.config.load_file(f"{self.wallex_data_dir}tags.json")
     self.parsed_quotes = self.config.cmc.get_parsed_quotes(False)
     self.wallets_to_export = {}
+    self.ref_wallets_filename = f"{self.wallex_data_dir}ref_wallets.json"
+    self.ref_wallets = {}
+    try:
+      self.import_ref_wallets_from_json_file()
+    except:
+      self.ref_wallets = None
     #patch: il faut que j'externalise les truc perso
-    self.all_my_personnal_wallets = ['binance_sol', 'bybit_sol', 'cwsol', 'TELEGRAM', 'BITGET', 'CWDCA','EGLD', 'custom_cwl', 'custom_phantom_sol','custom_binance_evm', 'custom_bybit_evm', 'KEPLR','ARGENTX','SUBWALLET']
+    self.all_my_personnal_wallets = ['binance_sol', 'bybit_sol', 'cwsol', 'coinbasewallet', 'manual_telegram', 'manual_bitget', 'manual_cwdca','manual_egld', 'custom_cwl', 'custom_phantom_sol','custom_binance_evm', 'custom_bybit_evm', 'manual_keplr','manual_argentx','manual_subwallet']
 
   def call_refresh_quotes(self):
     self.parsed_quotes = self.config.cmc.get_parsed_quotes(True)
@@ -60,29 +66,30 @@ class WalletManager:
 
   def fulfill_wallet_manager(self,refresh_quotes=False):
     c = self.config
-    self.create_custom_tags_and_custom_wallets()
+    self.create_custom_tags_and_manual_wallets()
     if refresh_quotes:
       self.call_refresh_quotes()
     for wallet in c.svm_wallets:
-      self.call_add_svm_and_keep_ref_value(c.svm_wallets[wallet],wallet,refresh_quotes)
+      self.add_svm_wallet(c.svm_wallets[wallet],wallet,refresh_quotes)
     for wallet in c.evm_wallets:
       #self.add_evm_wallet(c.evm_wallets[wallet],wallet,refresh_quotes)
-      self.call_add_evm_and_keep_ref_value(c.evm_wallets[wallet],wallet,refresh_quotes)
+      self.add_evm_wallet(c.evm_wallets[wallet],wallet,refresh_quotes)
 
     # chargement de la partie remplie off chain(non prise en charge par les API comme les lock/stack etc.)
-    self.import_custom_wallets_from_json_file(f"{self.wallex_data_dir}custom_wallets_.json")
-    self.fusion_wallets_by_name_1_2_in_3('cwl','CWL','custom_cwl')
-    self.fusion_wallets_by_name_1_2_in_3('phantom_sol','PHANTOM_SOL','custom_phantom_sol')
-    self.fusion_wallets_by_name_1_2_in_3('binance_evm','BINANCE_EVM','custom_binance_evm')
-    self.fusion_wallets_by_name_1_2_in_3('bybit_evm','BYBIT_EVM','custom_bybit_evm')
+    self.import_custom_wallets_from_json_file(f"{self.wallex_data_dir}manual_wallets_.json")
+    self.fusion_wallets_by_name_1_2_in_3('cwl','manual_cwl','custom_cwl')
+    self.fusion_wallets_by_name_1_2_in_3('phantom_sol','manual_phantom_sol','custom_phantom_sol')
+    self.fusion_wallets_by_name_1_2_in_3('binance_evm','manual_binance_evm','custom_binance_evm')
+    self.fusion_wallets_by_name_1_2_in_3('bybit_evm','manual_bybit_evm','custom_bybit_evm')
     #self.fusion_wallets_by_name_1_2_in_3('coinbasewallet','COINBASEWALLET','custom_coinbasewallet')
     self.update_all_my_wallets()
     self.remove_token_from_wallet_in_blockchain('ORCA','custom_phantom_sol','Solana')
     self.remove_token_from_wallet_in_blockchain('BLOOM','custom_cwl','Base')
     self.remove_token_from_wallet_in_blockchain('BOMB','custom_cwl','Base')
+    self.compare_new_wallets_to_ref_wallets()
     self.save_my_personal_wallets()
     self.mes_wallets = {}
-    self.import_custom_wallets_from_json_file(f"{self.wallex_data_dir}all_my_wallets.json")
+    self.import_and_compare_custom_wallets_from_json_file(f"{self.wallex_data_dir}all_my_wallets.json")
     self.get_total_by_wallet()
 
   def launch_new_scrapping(self):
@@ -221,7 +228,7 @@ class WalletManager:
     w3 = self.fusion_wallets_1_2_in_a_third_named(w1,w2,name_of_the_result)
     return w3
 
-  def export_custom_wallet_as_json(self,wallet:Wallet.Tokens):
+  def export_wallet_as_json(self,wallet:Wallet.Tokens):
     blockchains = {}
     for blockchain in wallet.entries:
       blockchains[blockchain] = {}
@@ -230,8 +237,32 @@ class WalletManager:
         json_entry = entry.get_json_entry()
         blockchains[blockchain][token] = json_entry
     resultat = {wallet.name:blockchains}
+    return resultat
+
+  def export_ref_wallet_as_json(self,wallet:Wallet.Tokens):
+    resultat = self.export_wallet_as_json(wallet)
+    return resultat
+
+  def export_custom_wallet_as_json(self,wallet:Wallet.Tokens):
+    resultat = self.export_wallet_as_json(wallet)
     self.wallets_to_export.update(resultat)
+    blockchains = resultat[wallet.name]
     return blockchains
+
+  def import_and_compare_custom_wallets_from_json_file(self,filename="custom_wallets.json"):
+    self.import_custom_wallets_from_json_file(filename)
+    self.compare_new_wallets_to_ref_wallets()
+
+  def import_ref_wallets_from_json_file(self,filename=None):
+    if not filename:
+      filename = self.ref_wallets_filename
+    wallets = self.config.load_file(filename)
+    for wallet in wallets:
+      mon_wallet = Wallet.Tokens()
+      mon_wallet.add_json_entries_from_multi_blockchain(wallets[wallet])
+      mon_wallet.name = wallet
+      mon_wallet = self.update_tokens_datas_for_wallet_via_default_tags(mon_wallet)
+      self.ref_wallets.update({mon_wallet.name:mon_wallet})
 
   def import_custom_wallets_from_json_file(self,filename="custom_wallets.json"):
     wallets = self.config.load_file(filename)
@@ -246,6 +277,17 @@ class WalletManager:
     c = self.config
     c.save_to_file(filename,self.wallets_to_export)
 
+  def save_mes_wallets_as_ref_wallets(self,filename=None):
+    nom_wallet_cible = self.mes_wallets.keys()
+    saved_wallets = {}
+    for name in nom_wallet_cible:
+      self.mes_wallets[name].name = name
+      saved_wallets.update(self.export_ref_wallet_as_json(self.mes_wallets[name]))
+    if not filename:
+      filename = self.ref_wallets_filename
+    self.config.save_to_file(filename,saved_wallets)
+    return saved_wallets
+
   def get_list_wallets(self):
     return list(self.mes_wallets.keys())
 
@@ -255,6 +297,7 @@ class WalletManager:
       self.mes_wallets[name].name = name
       self.export_custom_wallet_as_json(self.mes_wallets[name])
     saved_wallets = self.save_exported_wallets(f"{self.wallex_data_dir}all_my_wallets.json")
+    saved_wallets = self.save_exported_wallets(f"{self.wallex_data_dir}ref_wallets.json")
     return saved_wallets
 
   def update_all_my_wallets(self,refresh_quotes=False):
@@ -273,11 +316,11 @@ class WalletManager:
       total += total_by_tokens[token]
     return total
 
-  def get_total_by_wallet(self,write_hitory=False):
+  def get_total_by_wallet(self,write_history=False):
     total_by_wallet = {}
     for wallet in self.mes_wallets:
       total_by_wallet.update({wallet:self.mes_wallets[wallet].sum_total_balance()})
-      if write_hitory:
+      if write_history:
         self.history.add_content({wallet:self.mes_wallets[wallet].sum_total_balance()})
     return total_by_wallet
 
@@ -384,18 +427,61 @@ class WalletManager:
         wallets_from_csv[wallet] = {}
       if blockchain not in wallets_from_csv[wallet]:
         wallets_from_csv[wallet][blockchain] = {}
-      wallets_from_csv[wallet][blockchain].update({token:{ "id":id_token, "name":name, "symbol":token, "native_balance":native_balance, "exchange_rate":exchange_rate,"ref_exchange_rate":ref_exchange_rate,"ref_date_comparaison":ref_date_comparaison, "usd_balance":usd_balance, "type":"Custom", "blockchain":blockchain,"origine":origine,"famille":famille,"vision":vision,"strategie": strategie,"protocol":protocol,"position":position }})
+      wallets_from_csv[wallet][blockchain].update({token:{ "id":id_token, "name":name, "symbol":token, "native_balance":native_balance, "exchange_rate":exchange_rate,"ref_exchange_rate":ref_exchange_rate,"ref_date_comparaison":ref_date_comparaison, "usd_balance":usd_balance, "type":"Manuel", "blockchain":blockchain,"origine":origine,"famille":famille,"vision":vision,"strategie": strategie,"protocol":protocol,"position":position }})
       self.config.save_to_file(output_filename,wallets_from_csv)
 
-
-  def call_add_evm_and_keep_ref_value(self,account,name,refresh_quote=False):
+  def copy_wallet(self,name):
     if name in self.mes_wallets:
       old_wallet = copy.deepcopy(self.mes_wallets[name])
     elif f"custom_{name}" in self.mes_wallets:
       old_wallet = copy.deepcopy(self.mes_wallets[f"custom_{name}"])
     else:
       old_wallet = None
-    self.add_evm_wallet(account,name,refresh_quote)
+    return old_wallet
+
+  def copy_old_wallets_and_import_new_wallets(self,filename):
+    old_wallets = copy.deepcopy(self.mes_wallets)
+    self.import_custom_wallets_from_json_file(filename)
+    if old_wallets:
+      for wallet in self.mes_wallets:
+        new_wallet: Wallet.Tokens = self.mes_wallets[wallet]
+        for blockchain in new_wallet.entries:
+          for token in new_wallet.entries[blockchain]:
+            if blockchain in old_wallets[wallet].entries:
+              if token in old_wallets[wallet].entries[blockchain]:
+                new_wallet.entries[blockchain][token].copy_ref_values(old_wallets[wallet].entries[blockchain][token]) 
+    self.import_custom_wallets_from_json_file(filename)
+
+  def compare_new_wallets_to_ref_wallets(self):
+    if self.ref_wallets:
+      ref_wallets = self.ref_wallets
+      for wallet in self.mes_wallets:
+        new_wallet: Wallet.Tokens = self.mes_wallets[wallet]
+        if wallet in ref_wallets:
+          if isinstance(ref_wallets[wallet],dict) :
+            ref_wallet: Wallet.Tokens = Wallet.Tokens(self.ref_wallets[wallet])
+          else:
+            ref_wallet: Wallet.Tokens = self.ref_wallets[wallet]
+          for blockchain in new_wallet.entries:
+            for token in new_wallet.entries[blockchain]:
+              if blockchain in ref_wallet.entries:
+                if token in ref_wallet.entries[blockchain]:
+                  ref_token = ref_wallet.entries[blockchain][token]
+                  new_wallet.entries[blockchain][token].copy_ref_values(ref_token) 
+          self.mes_wallets.update({wallet:new_wallet})
+
+  def generate_ref_wallets_from_csv(self,csv_file,ref_date):
+    self.convert_complete_csv_wallets_to_json_file(csv_file,self.ref_wallets_filename,ref_date)
+    self.import_custom_wallets_from_json_file(self.ref_wallets_filename)
+    self.ref_wallets = copy.deepcopy(self.mes_wallets)
+    self.compare_new_wallets_to_ref_wallets()
+
+  def copy_and_add_wallet(self,account,name,type_wallet,refresh_quote=False):
+    old_wallet = self.copy_wallet(name)
+    if type_wallet == 'EVM':
+      self.add_evm_wallet(account,name,refresh_quote)
+    elif type_wallet == 'SVM':
+      self.add_svm_wallet(account,name,refresh_quote)
     if old_wallet:
       new_wallet: Wallet.Tokens = self.mes_wallets[name]
       for blockchain in new_wallet.entries:
@@ -404,33 +490,13 @@ class WalletManager:
             if token in old_wallet.entries[blockchain]:
               new_wallet.entries[blockchain][token].copy_ref_values(old_wallet.entries[blockchain][token])
 
-  def call_add_svm_and_keep_ref_value(self,account,name,refresh_quote=False):
-    if name in self.mes_wallets:
-      old_wallet = copy.deepcopy(self.mes_wallets[name])
-    elif f"custom_{name}" in self.mes_wallets:
-      old_wallet = copy.deepcopy(self.mes_wallets[f"custom_{name}"])
-    else:
-      old_wallet = None
-    self.add_svm_wallet(account,name,refresh_quote)
-    if old_wallet:
-      new_wallet: Wallet.Tokens = self.mes_wallets[name]
-      for blockchain in new_wallet.entries:
-        for token in new_wallet.entries[blockchain]:
-          if blockchain in old_wallet.entries:
-            if token in old_wallet.entries[blockchain]:
-              new_wallet.entries[blockchain][token].copy_ref_values(old_wallet.entries[blockchain][token])
-
-
-
-    
-
-  def create_custom_tags_and_custom_wallets(self):
+  def create_custom_tags_and_manual_wallets(self):
     wallex_common_data_dir = self.config.wallex_common_data_dir
     config_dir = self.config.wallex_config_dir
     csv_preparation_file = f"{config_dir}extra_position.txt"
     manual_tags_file = f"{config_dir}tags.json"
     auto_tags_file = f"{wallex_common_data_dir}tags.json"
-    custom_wallets_filename = f"{wallex_common_data_dir}custom_wallets_.json"
+    manual_wallets_filename = f"{wallex_common_data_dir}manual_wallets_.json"
     resultat = [[x for x in line.split(":")] for line in open(csv_preparation_file) if len(line) > 1 and "#" not in line]
 
     tags = self.config.load_file(manual_tags_file)
@@ -448,8 +514,9 @@ class WalletManager:
 
     self.config.save_to_file(auto_tags_file,tag_file)
 
-    custom_wallet_file = {}
+    manual_wallet_file = {}
     for tags_,wallet,blockchain,token,native_balance,usd_balance,exchange_rate in resultat:
+      wallet = 'manual_' + wallet.lower()
       tags = tags_.split("_")
       protocol = 'libre'
       position = "wallet"
@@ -466,11 +533,11 @@ class WalletManager:
       else:
         strategie = "suivi"
       blockchain = blockchain.capitalize()
-      if wallet in custom_wallet_file.keys():
-        if blockchain in custom_wallet_file[wallet].keys():
-          custom_wallet_file[wallet][blockchain].update({token:{ "id":token, "name":token, "symbol":token, "native_balance":native_balance, "exchange_rate":exchange_rate.split("\n")[0], "usd_balance":usd_balance, "type":"Custom", "blockchain":blockchain,"origine":"manuelle","strategie": strategie,"protocol":protocol,"position":position }}) 
+      if wallet in manual_wallet_file.keys():
+        if blockchain in manual_wallet_file[wallet].keys():
+          manual_wallet_file[wallet][blockchain].update({token:{ "id":token, "name":token, "symbol":token, "native_balance":native_balance, "exchange_rate":exchange_rate.split("\n")[0], "usd_balance":usd_balance, "type":"Manuel", "blockchain":blockchain,"origine":"manuelle","strategie": strategie,"protocol":protocol,"position":position }}) 
         else:
-          custom_wallet_file[wallet][blockchain] = {
+          manual_wallet_file[wallet][blockchain] = {
         token:{
           "id":token,
           "name":token,
@@ -478,14 +545,14 @@ class WalletManager:
           "native_balance":native_balance,
           "exchange_rate":exchange_rate.split("\n")[0],
           "usd_balance":usd_balance,
-          "type":"Custom",
+          "type":"Manuel",
           "blockchain":blockchain,
           "protocol": protocol,
           "position": position,
           "strategie": strategie,
           "origine": "manuelle" }}
       else:
-        custom_wallet_file[wallet] = {
+        manual_wallet_file[wallet] = {
       blockchain:{
         token:{
           "id":token,
@@ -494,12 +561,12 @@ class WalletManager:
           "native_balance":native_balance,
           "exchange_rate":exchange_rate.split("\n")[0],
           "usd_balance":usd_balance,
-          "type":"Custom",
+          "type":"Manuel",
           "blockchain":blockchain,
           "protocol": protocol,
           "position": position,
           "strategie": strategie,
           "origine": "manuelle"
     }}}
-    self.config.save_to_file(custom_wallets_filename,custom_wallet_file)
-    return custom_wallet_file 
+    self.config.save_to_file(manual_wallets_filename,manual_wallet_file)
+    return manual_wallet_file 

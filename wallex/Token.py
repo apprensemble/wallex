@@ -85,13 +85,17 @@ class Token:
                 self.ref_exchange_rate = entry['ref_exchange_rate']
             else:
                 self.ref_exchange_rate = entry['exchange_rate']
-            if 'ref_date_comparaison' in entry:
-                self.ref_date_comparaison = entry['ref_date_comparaison']
-            else:
-                self.ref_date_comparaison = time.time()
         else:
             self.ref_exchange_rate = None
             self.ref_date_comparaison = None
+        if 'ref_native_balance' in entry:
+            self.ref_native_balance = entry['ref_native_balance']
+        else:
+            self.ref_native_balance = None
+        if 'ref_date_comparaison' in entry:
+            self.ref_date_comparaison = entry['ref_date_comparaison']
+        else:
+            self.ref_date_comparaison = time.time()
 
 
 
@@ -112,6 +116,8 @@ class Token:
         self.usd_balance = round(float(self.native_balance) * float(exchange_rate),2)
         self.exchange_rate = float(exchange_rate)
         self.missing_exchange_rate = False
+        if not self.ref_exchange_rate:
+            self.add_ref_values(self.native_balance,self.exchange_rate,time.time())
 
     def get_json_entry(self):
         return self.__dict__
@@ -128,12 +134,16 @@ class Token:
         else:
             return False
 
-    def add_ref_values(self,ref_exchange_rate,ref_date_comparaison):
+    def add_ref_values(self,ref_native_balance,ref_exchange_rate,ref_date_comparaison):
         self.ref_exchange_rate = ref_exchange_rate
         self.ref_date_comparaison = ref_date_comparaison
+        self.ref_native_balance = ref_native_balance
 
     def copy_ref_values(self,token):
-        self.add_ref_values(token.ref_exchange_rate,token.ref_date_comparaison)
+        if token.ref_native_balance:
+            self.add_ref_values(token.ref_native_balance,token.ref_exchange_rate,token.ref_date_comparaison)
+        else:
+            self.add_ref_values(token.native_balance,token.ref_exchange_rate,token.ref_date_comparaison)
         
 
 

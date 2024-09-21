@@ -10,11 +10,11 @@ class TimeSeriesManager():
     self.wm = WalletManager.WalletManager()
     if init_default_wallet:
       wallet_file = f"{self.c.wallex_common_data_dir}all_my_wallets.json"
-      self.wm.import_custom_wallets_from_json_file(wallet_file)
+      self.wm.import_and_compare_custom_wallets_from_json_file(wallet_file)
 
   def init_json_wallets(self,json_filename,refresh_quotes=False):
     self.parsed_quotes = self.c.cmc.get_parsed_quotes(refresh_quotes)
-    self.wm.import_custom_wallets_from_json_file(json_filename)
+    self.wm.import_and_compare_custom_wallets_from_json_file(json_filename)
   
   def get_apr_for_amount_in_given_time(self,apr:float,amount:float,step:str):
     '''
@@ -221,7 +221,7 @@ class TimeSeriesManager():
   def get_full_df_with_apr(self):
     wm = self.wm
     all_wallets = wm.mes_wallets
-    dfp = {'wallet':[],'bc':[],'token_full_name':[],'token':[],'exchange_rate':[],'ref_exchange_rate':[],'ref_date_comparaison':[],'native_balance':[],'usd_balance':[],'famille':[],'strategie':[],'protocol':[],'vision':[],'position':[],'origine':[],"UP":[]}
+    dfp = {'wallet':[],'bc':[],'token_full_name':[],'token':[],'exchange_rate':[],'ref_exchange_rate':[],'ref_date_comparaison':[],'native_balance':[],'usd_balance':[],'famille':[],'strategie':[],'protocol':[],'vision':[],'position':[],'origine':[],"UP":[],"ref_native_balance":[]}
     check = lambda token,strategie: True if token in self.get_dataset_from_strategie(strategie)['labels'] else False
     for wallet in all_wallets:
       blockchains = all_wallets[wallet].get_detailled_tokens_infos_by_blockchain()
@@ -233,21 +233,26 @@ class TimeSeriesManager():
             dfp['token'].append(token)
             dfp['token_full_name'].append(tokens[token]['name'])
             dfp['native_balance'].append(tokens[token]['native_balance'])
+            if tokens[token]['ref_native_balance']:
+              dfp['ref_native_balance'].append(tokens[token]['ref_native_balance'])
+            else:
+              dfp['ref_native_balance'].append(tokens[token]['native_balance'])
+            if tokens[token]['ref_date_comparaison']:
+              dfp['ref_date_comparaison'].append(tokens[token]['ref_date_comparaison'])
+            else:
+              dfp['ref_date_comparaison'].append(time.time())
             dfp['origine'].append(tokens[token]['origine'])
             if tokens[token]['missing_exchange_rate']:
               dfp['usd_balance'].append(0)
               dfp['exchange_rate'].append(0)
               dfp['ref_exchange_rate'].append(0)
-              dfp['ref_date_comparaison'].append(time.time())
             else:
               dfp['usd_balance'].append(tokens[token]['usd_balance'])
               dfp['exchange_rate'].append(tokens[token]['exchange_rate'])
               if 'ref_exchange_rate' in tokens[token]:
                 dfp['ref_exchange_rate'].append(tokens[token]['ref_exchange_rate'])
-                dfp['ref_date_comparaison'].append(tokens[token]['ref_date_comparaison'])
               else:
                 dfp['ref_exchange_rate'].append(tokens[token]['exchange_rate'])
-                dfp['ref_date_comparaison'].append(time.time())
             dfp['position'].append(tokens[token]['position'])
             dfp['protocol'].append(tokens[token]['protocol'])
             dfp['famille'].append(tokens[token]['famille'])
@@ -344,10 +349,21 @@ class TimeSeriesManager():
       prix_debut = token['native_balance'] * token['ref_exchange_rate']
       prix_fin = token['usd_balance']
       resultat =  round(self.calcul_pct_from_diff(token['ref_exchange_rate'],token['exchange_rate']),2)
+      #gainNR = round(prix_fin - prix_debut,2)
+      #resultat = f"G/Pnr {gainNR} -> ({resultat} %)"
     except Exception as e:
       print(e)
       resultat = 0
     return resultat
+
+  def convert_seconds_to_rdate(self,seconds):
+    return time.strftime("%d/%m/%Y à %H:%M",time.localtime(seconds))
+
+  def convert_rdate_to_seconds(self,rdate):
+    rtuple = time.strptime(rdate, "%d/%m/%Y à %H:%M")
+    return time.mktime(rtuple)
+
+
 
 
     
