@@ -1,6 +1,7 @@
 from wallex import WalletManager,Logger,Config
 import pandas as pd
 import time
+import traceback
 
 class TimeSeriesManager():
 
@@ -228,37 +229,20 @@ class TimeSeriesManager():
       for bc in blockchains:
         for tokens in blockchains[bc]:
           for token in tokens:
-            dfp['wallet'].append(wallet)
-            dfp['bc'].append(bc)
-            dfp['token'].append(token)
-            dfp['token_full_name'].append(tokens[token]['name'])
-            dfp['native_balance'].append(tokens[token]['native_balance'])
-            if tokens[token]['ref_native_balance']:
-              dfp['ref_native_balance'].append(tokens[token]['ref_native_balance'])
-            else:
-              dfp['ref_native_balance'].append(tokens[token]['native_balance'])
-            if tokens[token]['ref_date_comparaison']:
-              dfp['ref_date_comparaison'].append(tokens[token]['ref_date_comparaison'])
-            else:
-              dfp['ref_date_comparaison'].append(time.time())
-            dfp['origine'].append(tokens[token]['origine'])
-            if tokens[token]['missing_exchange_rate']:
-              dfp['usd_balance'].append(0)
-              dfp['exchange_rate'].append(0)
-              dfp['ref_exchange_rate'].append(0)
-            else:
-              dfp['usd_balance'].append(tokens[token]['usd_balance'])
-              dfp['exchange_rate'].append(tokens[token]['exchange_rate'])
-              if 'ref_exchange_rate' in tokens[token]:
-                dfp['ref_exchange_rate'].append(tokens[token]['ref_exchange_rate'])
+            for i in dfp:
+              if i == 'UP':
+                dfp['UP'].append(self.calcul_ecart_pct_token(tokens[token]))
+              elif i == 'token_full_name':
+                dfp['token_full_name'].append(tokens[token]['name'])
+              elif i == 'wallet':
+                dfp[i].append(wallet)
+              elif i == 'bc':
+                dfp[i].append(bc)
+              elif i == 'token':
+                dfp[i].append(token)
               else:
-                dfp['ref_exchange_rate'].append(tokens[token]['exchange_rate'])
-            dfp['position'].append(tokens[token]['position'])
-            dfp['protocol'].append(tokens[token]['protocol'])
-            dfp['famille'].append(tokens[token]['famille'])
-            dfp['strategie'].append(tokens[token]['strategie'])
-            dfp['vision'].append(tokens[token]['vision'])
-            dfp['UP'].append(self.calcul_ecart_pct_token(tokens[token]))
+                dfp[i].append(tokens[token][i])
+              
     for i in dfp:
       print(i,(len(dfp[i])))
     df = pd.DataFrame(dfp)
@@ -300,6 +284,8 @@ class TimeSeriesManager():
 
   def calcul_pct_from_diff(self,avant,apres):
     #p = lambda avant,apres: str(apres/avant*100-100)+" %"
+    if avant == 0:
+      return 100
     return apres/avant*100-100
 
   def calcul_apr_from_diff(self,avant,apres,nbr_jours):
@@ -352,7 +338,8 @@ class TimeSeriesManager():
       #gainNR = round(prix_fin - prix_debut,2)
       #resultat = f"G/Pnr {gainNR} -> ({resultat} %)"
     except Exception as e:
-      print(e)
+      print(token['name'])
+      print(traceback.format_exc())
       resultat = 0
     return resultat
 

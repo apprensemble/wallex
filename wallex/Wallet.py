@@ -126,6 +126,8 @@ class Tokens:
             for index in entries[blockchain]:
                 if entries[blockchain][index].missing_exchange_rate:
                     self.call_add_exchange_rate(entries[blockchain][index],parsed_quotes,index)
+                elif entries[blockchain][index].exchange_rate == 0:
+                    self.call_add_exchange_rate(entries[blockchain][index],parsed_quotes,index)
         return entries
 
     def update_all_exchange_rate_via_parsed_quotes(self,parsed_quotes):
@@ -135,6 +137,14 @@ class Tokens:
             for index in entries[blockchain]:
                 self.call_add_exchange_rate(entries[blockchain][index],parsed_quotes,index)
         return entries
+
+    def init_ref_exchange_rate(self):
+        entries = self.entries
+        for blockchain in entries.keys():
+            for index in entries[blockchain]:
+                entries[blockchain][index].init_ref_exchange_rate()
+        return entries
+
 
     def remove_token_from_blockchain(self,symbol,blockchain):
         removed_symbol = ""

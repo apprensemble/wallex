@@ -29,8 +29,6 @@ class WalletManager:
     self.parsed_quotes = self.config.cmc.get_parsed_quotes(True)
 
   def add_evm_wallet(self,account,name,refresh_quotes=False):
-    if refresh_quotes:
-      self.call_refresh_quotes()
     parsed_quotes = self.parsed_quotes
 
     mon_wallet = zerion.get_evm_wallet(account,refresh_quotes)
@@ -43,18 +41,16 @@ class WalletManager:
     mon_wallet3 = self.fusion_wallets_1_2_in_a_third_named(mon_wallet,mon_wallet2,name)
     mon_wallet3.change_symbol1_to_symbol2_on_blockchain_for_token_name('VELO','VELO2','Optimism','Velodrome')
     mon_wallet3.change_symbol1_to_symbol2_on_blockchain_for_complexe_token_name('VELO','VELO2','Optimism','Velodrome')
-    mon_wallet3.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
+    mon_wallet3.update_all_missing_exchange_rate_via_parsed_quotes(parsed_quotes)
     self.update_tokens_datas_for_wallet_via_default_tags(mon_wallet3)
 
   def add_svm_wallet(self,account,name,refresh_quotes=False):
-    if refresh_quotes:
-      self.call_refresh_quotes()
     parsed_quotes = self.parsed_quotes
     mon_wallet = Wallet.Tokens(name)
     mon_wallet.add_json_entry(solana.get_sol_balance_from_moralis(self.config.moralis_api_key, account))
     mon_wallet.add_json_entries(solana.get_spl_tokens_balance_from_moralis(self.config.moralis_api_key, account))
     mon_wallet.remove_token_from_blockchain('PYTH','Solana')
-    mon_wallet.update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
+    mon_wallet.update_all_missing_exchange_rate_via_parsed_quotes(parsed_quotes)
     self.update_tokens_datas_for_wallet_via_default_tags(mon_wallet)
 
 # Note pour plus tard penser à faire une fonction de remplacement du symbol lorsque l'on souhaite le moins populaire.
@@ -278,10 +274,11 @@ class WalletManager:
     c.save_to_file(filename,self.wallets_to_export)
 
   def save_mes_wallets_as_ref_wallets(self,filename=None):
-    nom_wallet_cible = self.mes_wallets.keys()
+    nom_wallets_cible = self.mes_wallets.keys()
     saved_wallets = {}
-    for name in nom_wallet_cible:
+    for name in nom_wallets_cible:
       self.mes_wallets[name].name = name
+      self.mes_wallets[name].init_ref_exchange_rate()
       saved_wallets.update(self.export_ref_wallet_as_json(self.mes_wallets[name]))
     if not filename:
       filename = self.ref_wallets_filename
@@ -300,14 +297,18 @@ class WalletManager:
     saved_wallets = self.save_exported_wallets(f"{self.wallex_data_dir}ref_wallets.json")
     return saved_wallets
 
-  def update_all_my_wallets(self,refresh_quotes=False):
+  def update_all_my_wallets(self,refresh_quotes=False,recover_updated_exchange_rate=False):
     # patch: je dois imaginer un truc plus generique mais c'est juste le temps de travailler sur les charts, flemme de faire les updates manunellement a chaque fois
-    if refresh_quotes:
-      self.call_refresh_quotes()
     parsed_quotes = self.parsed_quotes
     nom_wallet_cible = self.all_my_personnal_wallets
     for name in nom_wallet_cible:
-      self.mes_wallets[name].update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
+      if recover_updated_exchange_rate:
+        self.mes_wallets[name].update_all_exchange_rate_via_parsed_quotes(parsed_quotes)
+      else:
+        self.mes_wallets[name].update_all_missing_exchange_rate_via_parsed_quotes(parsed_quotes)
+
+  def update_all_exchange_rate_with_cmc(self,refresh_quotes=False):
+    self.update_all_my_wallets(refresh_quotes,recover_updated_exchange_rate=True)
 
   def sum_all_wallets(self):
     total = 0

@@ -105,6 +105,15 @@ class Token:
             self.usd_balance = round(float(self.native_balance) * float(exchange_rate),2)
         except (AttributeError,ValueError):
             self.missing_exchange_rate = True
+            self.usd_balance = 0
+            self.exchange_rate = 0
+            try:
+                if not self.native_balance:
+                    self.native_balance = 0
+                    print("Missing native_balance")
+            except:
+                self.native_balance = 0
+                print("Missing native_balance attr")
             print("Missing exchange rate")
 
     def sum_token_values(self,new_token):
@@ -118,6 +127,11 @@ class Token:
         self.missing_exchange_rate = False
         if not self.ref_exchange_rate:
             self.add_ref_values(self.native_balance,self.exchange_rate,time.time())
+
+    def init_ref_exchange_rate(self):
+        if not self.ref_exchange_rate:
+            self.add_ref_values(self.native_balance,self.exchange_rate,time.time())
+
 
     def get_json_entry(self):
         return self.__dict__
@@ -135,9 +149,9 @@ class Token:
             return False
 
     def add_ref_values(self,ref_native_balance,ref_exchange_rate,ref_date_comparaison):
-        self.ref_exchange_rate = ref_exchange_rate
+        self.ref_exchange_rate = float(ref_exchange_rate)
         self.ref_date_comparaison = ref_date_comparaison
-        self.ref_native_balance = ref_native_balance
+        self.ref_native_balance = float(ref_native_balance)
 
     def copy_ref_values(self,token):
         if token.ref_native_balance:
