@@ -19,7 +19,6 @@ class Logger:
     if self.lock_done:
       try:
         os.rmdir("lock_wallex")
-        print("unlock")
         self.lock_done = False
       except FileNotFoundError:
         print("Le lock n'a pu etre trouvé!!! attention...")
@@ -35,7 +34,6 @@ class Logger:
     while stamp - newStamp > 0:
       try:
         os.mkdir("lock_wallex")
-        print("lock")
         lock_done = True
         newStamp = stamp
       except FileExistsError:
@@ -52,10 +50,14 @@ class Logger:
     """
     self.lock()
     if self.lock_done:
-      f = open(filename)
-      fjson = json.loads(f.read())
-      self.unlock()
-      return fjson
+      if os.path.exists(filename):
+        f = open(filename)
+        fjson = json.loads(f.read())
+        self.unlock()
+        return fjson
+      else:
+        self.unlock()
+        raise Exception("file does not exist...")
     else:
       raise Exception("A lock is already there...")
 

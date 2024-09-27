@@ -48,11 +48,15 @@ class Token:
         self.symbol = entry['symbol']
         self.native_balance = float(entry['native_balance'])
         try:
-            self.exchange_rate = float(entry['exchange_rate'])
-            self.usd_balance = self.exchange_rate * self.native_balance
-            self.missing_exchange_rate = False
-        except (ValueError,KeyError):
+            if 'exchange_rate' in entry:
+                self.exchange_rate = float(entry['exchange_rate'])
+                self.usd_balance = self.exchange_rate * self.native_balance
+                self.missing_exchange_rate = False
+            else:
+                self.missing_exchange_rate = True
+        except:
             self.missing_exchange_rate = True
+
         self.type = entry['type']
         self.blockchain = entry['blockchain']
         if 'protocol' in entry:
@@ -96,6 +100,10 @@ class Token:
             self.ref_date_comparaison = entry['ref_date_comparaison']
         else:
             self.ref_date_comparaison = time.time()
+        if 'last_update' in entry:
+            self.last_update = entry['last_update']
+        else:
+            self.last_update = None
 
 
 
@@ -117,7 +125,7 @@ class Token:
             print("Missing exchange rate")
 
     def sum_token_values(self,new_token):
-        if self.id == new_token.id and self.blockchain == new_token.blockchain and self.position == new_token.position:
+        if self.is_same_position(new_token):
             self.native_balance += new_token.native_balance
         self.compute_usd_balance()
 
@@ -126,11 +134,14 @@ class Token:
         self.exchange_rate = float(exchange_rate)
         self.missing_exchange_rate = False
         if not self.ref_exchange_rate:
-            self.add_ref_values(self.native_balance,self.exchange_rate,time.time())
+            self.add_ref_values(self.native_balance,self.exchange_rate,time.time(),time.time())
+        else:
+            self.add_ref_values(self.native_balance,self.exchange_rate,self.ref_date_comparaison,time.time())
+
 
     def init_ref_exchange_rate(self):
         if not self.ref_exchange_rate:
-            self.add_ref_values(self.native_balance,self.exchange_rate,time.time())
+            self.add_ref_values(self.native_balance,self.exchange_rate,time.time(),time.time())
 
 
     def get_json_entry(self):
@@ -148,16 +159,21 @@ class Token:
         else:
             return False
 
-    def add_ref_values(self,ref_native_balance,ref_exchange_rate,ref_date_comparaison):
+    def add_ref_values(self,ref_native_balance,ref_exchange_rate,ref_date_comparaison,last_update):
         self.ref_exchange_rate = float(ref_exchange_rate)
         self.ref_date_comparaison = ref_date_comparaison
         self.ref_native_balance = float(ref_native_balance)
+        self.last_update = last_update
 
     def copy_ref_values(self,token):
-        if token.ref_native_balance:
-            self.add_ref_values(token.ref_native_balance,token.ref_exchange_rate,token.ref_date_comparaison)
+        if self.last_update:
+            last_update = self.last_update
         else:
-            self.add_ref_values(token.native_balance,token.ref_exchange_rate,token.ref_date_comparaison)
+            last_update = token.last_update
+        if token.ref_native_balance:
+            self.add_ref_values(token.ref_native_balance,token.ref_exchange_rate,token.ref_date_comparaison,last_update)
+        else:
+            self.add_ref_values(token.native_balance,token.ref_exchange_rate,token.ref_date_comparaison,last_update)
         
 
 

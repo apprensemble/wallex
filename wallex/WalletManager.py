@@ -50,6 +50,7 @@ class WalletManager:
     mon_wallet.add_json_entry(solana.get_sol_balance_from_moralis(self.config.moralis_api_key, account))
     mon_wallet.add_json_entries(solana.get_spl_tokens_balance_from_moralis(self.config.moralis_api_key, account))
     mon_wallet.remove_token_from_blockchain('PYTH','Solana')
+    mon_wallet.change_symbol1_to_symbol2_on_blockchain_for_token_name('$WIF','WIF','Solana','dogwifhat')
     mon_wallet.update_all_missing_exchange_rate_via_parsed_quotes(parsed_quotes)
     self.update_tokens_datas_for_wallet_via_default_tags(mon_wallet)
 
@@ -62,9 +63,11 @@ class WalletManager:
 
   def fulfill_wallet_manager(self,refresh_quotes=False):
     c = self.config
-    self.create_custom_tags_and_manual_wallets()
+    last_update = None 
     if refresh_quotes:
       self.call_refresh_quotes()
+      last_update = time.time() 
+    self.create_custom_tags_and_manual_wallets(last_update)
     for wallet in c.svm_wallets:
       self.add_svm_wallet(c.svm_wallets[wallet],wallet,refresh_quotes)
     for wallet in c.evm_wallets:
@@ -491,7 +494,7 @@ class WalletManager:
             if token in old_wallet.entries[blockchain]:
               new_wallet.entries[blockchain][token].copy_ref_values(old_wallet.entries[blockchain][token])
 
-  def create_custom_tags_and_manual_wallets(self):
+  def create_custom_tags_and_manual_wallets(self,last_update = None):
     wallex_common_data_dir = self.config.wallex_common_data_dir
     config_dir = self.config.wallex_config_dir
     csv_preparation_file = f"{config_dir}extra_position.txt"
@@ -536,7 +539,7 @@ class WalletManager:
       blockchain = blockchain.capitalize()
       if wallet in manual_wallet_file.keys():
         if blockchain in manual_wallet_file[wallet].keys():
-          manual_wallet_file[wallet][blockchain].update({token:{ "id":token, "name":token, "symbol":token, "native_balance":native_balance, "exchange_rate":exchange_rate.split("\n")[0], "usd_balance":usd_balance, "type":"Manuel", "blockchain":blockchain,"origine":"manuelle","strategie": strategie,"protocol":protocol,"position":position }}) 
+          manual_wallet_file[wallet][blockchain].update({token:{ "id":token, "name":token, "symbol":token, "native_balance":native_balance, "exchange_rate":exchange_rate.split("\n")[0], "usd_balance":usd_balance, "type":"Manuel", "blockchain":blockchain,"origine":"manuelle","strategie": strategie,"protocol":protocol,"position":position ,"last_update":last_update}}) 
         else:
           manual_wallet_file[wallet][blockchain] = {
         token:{
@@ -546,6 +549,7 @@ class WalletManager:
           "native_balance":native_balance,
           "exchange_rate":exchange_rate.split("\n")[0],
           "usd_balance":usd_balance,
+          "last_update":last_update,
           "type":"Manuel",
           "blockchain":blockchain,
           "protocol": protocol,
@@ -562,6 +566,7 @@ class WalletManager:
           "native_balance":native_balance,
           "exchange_rate":exchange_rate.split("\n")[0],
           "usd_balance":usd_balance,
+          "last_update":last_update,
           "type":"Manuel",
           "blockchain":blockchain,
           "protocol": protocol,

@@ -1,4 +1,4 @@
-from wallex import WalletManager,Logger,Config
+from wallex import WalletManager,Logger,Config,RRTagger
 import pandas as pd
 import time
 import traceback
@@ -9,6 +9,8 @@ class TimeSeriesManager():
     self.c = Config.Config()
     self.parsed_quotes = self.c.cmc.get_parsed_quotes(refresh_quotes)
     self.wm = WalletManager.WalletManager()
+    self.rr = RRTagger.RR(config=self.c,parsed_quote=self.parsed_quotes)
+
     if init_default_wallet:
       wallet_file = f"{self.c.wallex_common_data_dir}all_my_wallets.json"
       self.wm.import_and_compare_custom_wallets_from_json_file(wallet_file)
@@ -174,8 +176,8 @@ class TimeSeriesManager():
             dfp['famille'].append(tokens[token]['famille'])
             dfp['strategie'].append(tokens[token]['strategie'])
             dfp['vision'].append(tokens[token]['vision'])
-    for i in dfp:
-      print(i,(len(dfp[i])))
+   # for i in dfp:
+   #   print(i,(len(dfp[i])))
     df = pd.DataFrame(dfp)
     return df
 
@@ -214,15 +216,15 @@ class TimeSeriesManager():
             dfp['famille'].append(tokens[token]['famille'])
             dfp['strategie'].append(tokens[token]['strategie'])
             dfp['vision'].append(tokens[token]['vision'])
-    for i in dfp:
-      print(i,(len(dfp[i])))
+   # for i in dfp:
+   #   print(i,(len(dfp[i])))
     df = pd.DataFrame(dfp)
     return df
 
   def get_full_df_with_apr(self):
     wm = self.wm
     all_wallets = wm.mes_wallets
-    dfp = {'wallet':[],'bc':[],'token_full_name':[],'token':[],'exchange_rate':[],'ref_exchange_rate':[],'ref_date_comparaison':[],'native_balance':[],'usd_balance':[],'famille':[],'strategie':[],'protocol':[],'vision':[],'position':[],'origine':[],"UP":[],"ref_native_balance":[]}
+    dfp = {'wallet':[],'bc':[],'token_full_name':[],'token':[],'exchange_rate':[],'ref_exchange_rate':[],'ref_date_comparaison':[],'native_balance':[],'usd_balance':[],'famille':[],'strategie':[],'protocol':[],'vision':[],'position':[],'origine':[],"UP":[],"ref_native_balance":[],"last_update":[]}
     check = lambda token,strategie: True if token in self.get_dataset_from_strategie(strategie)['labels'] else False
     for wallet in all_wallets:
       blockchains = all_wallets[wallet].get_detailled_tokens_infos_by_blockchain()
@@ -243,9 +245,26 @@ class TimeSeriesManager():
               else:
                 dfp[i].append(tokens[token][i])
               
-    for i in dfp:
-      print(i,(len(dfp[i])))
+   # for i in dfp:
+   #   print(i,(len(dfp[i])))
     df = pd.DataFrame(dfp)
+    return df
+
+  def get_full_df_with_rr(self):
+   #"tp":[],"sl":[],"ppmax":[],"capital":[],"rr":[],"gainEst":[],"perteEst":[] 
+    rr = self.rr
+    rr_column = ["tp","sl","ppmax","capital","rr","gainEst","perteEst"]
+    df = self.get_full_df_with_apr()
+    for col in rr_column:
+      df[col] = 0.0
+    for token in df['token'].unique():
+      df.loc[df['token'] == token,'tp'] = rr.load_simulation_rr(token)['tp']
+      df.loc[df['token'] == token,'sl'] = rr.load_simulation_rr(token)['sl']
+      df.loc[df['token'] == token,'rr'] = rr.load_simulation_rr(token)['rr']
+      df.loc[df['token'] == token,'ppmax'] = rr.get_capital(token)['ppmax']
+      df.loc[df['token'] == token,'capital'] = rr.get_capital(token)['capital']
+      df.loc[df['token'] == token,'gainEst'] = rr.load_simulation_rr(token)['gainEst']
+      df.loc[df['token'] == token,'perteEst'] = rr.load_simulation_rr(token)['perteEst']
     return df
 
   def create_daily_list_for_apy(self,apr,sommes,jours,box):

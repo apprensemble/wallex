@@ -12,7 +12,7 @@ class Tokens:
         self.name = name
         self.balance_by_blockchain = {}
 
-    def add_entry(self,token: Token.Token):
+    def add_entry_(self,token: Token.Token):
         try:
             self.entries[token.blockchain][token.id] = token
         except KeyError:
@@ -20,14 +20,14 @@ class Tokens:
             self.entries[token.blockchain][token.id] = token
         return self.entries
 
-    def add_entry_(self,token: Token.Token):
+    def add_entry(self,token: Token.Token):
         try:
             if token.id not in self.entries[token.blockchain]:
                 self.entries[token.blockchain][token.id] = token
             elif self.entries[token.blockchain][token.id].is_same_position(token):
                 self.entries[token.blockchain][token.id].sum_token_values(token)
             else:
-                raise Exception(f"{token} dans la meme blockchain mais pas de meme type")
+                raise Exception(f"-------------------------------{token} dans la meme blockchain mais pas de meme type")
         except KeyError:
             self.entries[token.blockchain] = {}
             self.entries[token.blockchain][token.id] = token
@@ -64,7 +64,7 @@ class Tokens:
             for entry in entries:
                 self.add_entry(Token.Token(entries[entry]))
 
-    def add_json_entry(self,entry):
+    def add_json_entry_(self,entry):
         blockchain = entry['blockchain']
         id = entry['id']
         try:
@@ -78,7 +78,7 @@ class Tokens:
             self.entries[blockchain][id] = Token.Token(entry)
         return self.entries
 
-    def add_json_entry_(self,entry):
+    def add_json_entry(self,entry):
         blockchain = entry['blockchain']
         id = entry['id']
         try:

@@ -1,5 +1,6 @@
 from requests import Session
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
+import time
 
 def convert_entry_from_decimals(entry):
   return int(entry['value']) * 10**-int(entry['token']['decimals'])
@@ -88,6 +89,7 @@ def parse_response_from_blockscout(rjson):
         'contract_address': entry['token']['address'],
         'native_balance': native_balance,
         'usd_balance': round(usd_balance,2),
+        'last_update': time.time(),
         'blockchain': "mantle".capitalize(),
         'origine': 'simple',
         'protocol': 'libre',

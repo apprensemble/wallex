@@ -2,6 +2,7 @@ from requests import Session
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
 from wallex import Config,Wallet
 import os.path
+import time
 
 c = Config.Config()
 zerion_api_key = c.zerion_api_key
@@ -24,7 +25,7 @@ def get_with_parameters(url,parameters,headers):
     print(response.json()['errors'])
     return {}
 
-def parse_response_and_return_wallet(rjson,origine="simple"):
+def parse_response_and_return_wallet(rjson,origine="simple",refresh=False):
   mon_wallet = Wallet.Tokens()
   for token in rjson:
     try:
@@ -53,6 +54,10 @@ def parse_response_and_return_wallet(rjson,origine="simple"):
         symbol = "WAVAX"
       if name.find("ApeSwap") > -1:
         symbol = "BANANA2"
+      if refresh:
+        last_update = time.time()
+      else:
+        last_update = None
       entry = {
         'id': symbol,
         'name': name,
@@ -60,6 +65,7 @@ def parse_response_and_return_wallet(rjson,origine="simple"):
         'contract_address': token['id'].split("-")[0],
         'native_balance': native_balance,
         'usd_balance': usd_balance,
+        'last_update': last_update,
         'blockchain': blockchain.capitalize(),
         'origine': origine,
         'type': "EVM",
@@ -96,9 +102,9 @@ def get_evm_wallet(account,refresh=False,positions="only_simple"):
   elif 'data' not in rjson:
     raise Exception(f"no data for {account} {rjson}")
   if positions == "only_simple":
-    resultat = parse_response_and_return_wallet(rjson['data'])
+    resultat = parse_response_and_return_wallet(rjson['data'],refresh=refresh)
   else:
-    resultat = parse_response_and_return_wallet(rjson['data'],"complexe")
+    resultat = parse_response_and_return_wallet(rjson['data'],"complexe",refresh=refresh)
   return resultat
 
 def get_evm_complex_wallet(account,refresh=False):
