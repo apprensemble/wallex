@@ -392,6 +392,7 @@ class WalletManager:
   def convert_complete_csv_wallets_to_json_file(self,input_filename,output_filename='wallet_from_csv.json',ref_date=time.time()):
     df = pd.read_csv(input_filename)
     wallets_from_csv = {}
+    last_update = None
     for i,ligne in df.iterrows():
       wallet = ligne['wallet']
       blockchain = ligne['bc']
@@ -424,6 +425,8 @@ class WalletManager:
         ref_date_comparaison = ligne['ref_date_comparaison']
       else:
         ref_date_comparaison = ref_date
+      if 'last_update' in ligne:
+        last_update = ligne['last_update']
 
 
 
@@ -431,7 +434,7 @@ class WalletManager:
         wallets_from_csv[wallet] = {}
       if blockchain not in wallets_from_csv[wallet]:
         wallets_from_csv[wallet][blockchain] = {}
-      wallets_from_csv[wallet][blockchain].update({token:{ "id":id_token, "name":name, "symbol":token, "native_balance":native_balance, "exchange_rate":exchange_rate,"ref_exchange_rate":ref_exchange_rate,"ref_date_comparaison":ref_date_comparaison, "usd_balance":usd_balance, "type":"Manuel", "blockchain":blockchain,"origine":origine,"famille":famille,"vision":vision,"strategie": strategie,"protocol":protocol,"position":position }})
+      wallets_from_csv[wallet][blockchain].update({token:{ "id":id_token, "name":name, "symbol":token, "native_balance":native_balance, "exchange_rate":exchange_rate,"ref_exchange_rate":ref_exchange_rate,"ref_date_comparaison":ref_date_comparaison, "usd_balance":usd_balance, "type":"Manuel", "blockchain":blockchain,"origine":origine,"famille":famille,"vision":vision,"strategie": strategie,"protocol":protocol,"position":position,"last_update":last_update }})
       self.config.save_to_file(output_filename,wallets_from_csv)
 
   def copy_wallet(self,name):
