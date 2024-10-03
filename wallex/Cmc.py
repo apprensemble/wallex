@@ -1,5 +1,6 @@
 from requests import Session
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
+import time
 import json
 
 class Cmc:
@@ -76,6 +77,7 @@ class Cmc:
 
     def parse_quotes_from_cmc(self,quotes):
         parsed_quotes = {}
+        parsed_quotes['last_update'] = time.mktime(time.strptime(quotes['status']['timestamp'].split(".")[0],"%Y-%m-%dT%H:%M:%S"))
         for d in quotes['data']:
             doublons = False
             occurences = 1

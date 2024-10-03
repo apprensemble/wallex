@@ -7,21 +7,34 @@ class WalletManager:
   mes_wallets: dict[str:Wallet.Tokens]
   tags: dict
 
-  def __init__(self) -> None:
+  def __init__(self,mode_test=False) -> None:
     self.config = Config.Config()
     self.wallex_data_dir = self.config.wallex_common_data_dir
+    self.config_dir = self.config.wallex_config_dir
+    if mode_test:
+      #mt pour mode test
+      self.wallex_data_dir = self.config.wallex_common_data_dir_test
+      self.config_dir = self.config.wallex_config_dir_test
+
     history_file = f"{self.wallex_data_dir}hf_api.json"
+    self.tags_file = f"{self.wallex_data_dir}tags.json"
+    self.tags = self.config.load_file(self.tags_file)
+    self.ref_wallets_filename = f"{self.wallex_data_dir}ref_wallets.json"
+    self.manual_wallets_filename = f"{self.wallex_data_dir}manual_wallets_.json"
+    self.all_wallets_filename = f"{self.wallex_data_dir}all_my_wallets.json"
+    self.csv_preparation_file = f"{self.config_dir}extra_position.txt"
+    self.manual_tags_file = f"{self.config_dir}tags.json"
+      
+
     self.history = Logger.Logger(history_file)
     self.mes_wallets = {}
-    self.tags = self.config.load_file(f"{self.wallex_data_dir}tags.json")
     self.parsed_quotes = self.config.cmc.get_parsed_quotes(False)
     self.wallets_to_export = {}
-    self.ref_wallets_filename = f"{self.wallex_data_dir}ref_wallets.json"
     self.ref_wallets = {}
     try:
       self.import_ref_wallets_from_json_file()
     except:
-      self.ref_wallets = None
+      self.ref_wallets = {}
     #patch: il faut que j'externalise les truc perso
     self.all_my_personnal_wallets = ['binance_sol', 'bybit_sol', 'cwsol', 'coinbasewallet', 'manual_telegram', 'manual_bitget', 'manual_cwdca','manual_egld', 'custom_cwl', 'custom_phantom_sol','custom_binance_evm', 'custom_bybit_evm', 'manual_keplr','manual_argentx','manual_subwallet']
 
@@ -31,11 +44,11 @@ class WalletManager:
   def add_evm_wallet(self,account,name,refresh_quotes=False):
     parsed_quotes = self.parsed_quotes
 
-    mon_wallet = zerion.get_evm_wallet(account,refresh_quotes)
-    mon_wallet2 = zerion.get_evm_complex_wallet(account,refresh_quotes)
+    mon_wallet: Wallet.Tokens = zerion.get_evm_wallet(account,refresh_quotes)
+    mon_wallet2: Wallet.Tokens = zerion.get_evm_complex_wallet(account,refresh_quotes)
     mon_wallet.name = name
     mon_wallet2.name = name
-    if 'Mantle' not in mon_wallet.entries.keys():
+    if not mon_wallet.isInblockchain('Mantle'):
       mon_wallet.add_json_entry(mantle.get_native_balance_from_blockscout(account))
       mon_wallet.add_json_entries(mantle.get_tokens_balance_from_blockscout(account))
     mon_wallet3 = self.fusion_wallets_1_2_in_a_third_named(mon_wallet,mon_wallet2,name)
@@ -43,6 +56,7 @@ class WalletManager:
     mon_wallet3.change_symbol1_to_symbol2_on_blockchain_for_complexe_token_name('VELO','VELO2','Optimism','Velodrome')
     mon_wallet3.update_all_missing_exchange_rate_via_parsed_quotes(parsed_quotes)
     self.update_tokens_datas_for_wallet_via_default_tags(mon_wallet3)
+    self.mes_wallets.update({mon_wallet3.name:mon_wallet3})
 
   def add_svm_wallet(self,account,name,refresh_quotes=False):
     parsed_quotes = self.parsed_quotes
@@ -53,6 +67,7 @@ class WalletManager:
     mon_wallet.change_symbol1_to_symbol2_on_blockchain_for_token_name('$WIF','WIF','Solana','dogwifhat')
     mon_wallet.update_all_missing_exchange_rate_via_parsed_quotes(parsed_quotes)
     self.update_tokens_datas_for_wallet_via_default_tags(mon_wallet)
+    self.mes_wallets.update({mon_wallet.name:mon_wallet})
 
 # Note pour plus tard penser à faire une fonction de remplacement du symbol lorsque l'on souhaite le moins populaire.
 # certainenement à faire par blockchain et par wallet. Depuis le fichier de config ou un autre.
@@ -75,7 +90,7 @@ class WalletManager:
       self.add_evm_wallet(c.evm_wallets[wallet],wallet,refresh_quotes)
 
     # chargement de la partie remplie off chain(non prise en charge par les API comme les lock/stack etc.)
-    self.import_custom_wallets_from_json_file(f"{self.wallex_data_dir}manual_wallets_.json")
+    self.import_custom_wallets_from_json_file(self.manual_wallets_filename)
     self.fusion_wallets_by_name_1_2_in_3('cwl','manual_cwl','custom_cwl')
     self.fusion_wallets_by_name_1_2_in_3('phantom_sol','manual_phantom_sol','custom_phantom_sol')
     self.fusion_wallets_by_name_1_2_in_3('binance_evm','manual_binance_evm','custom_binance_evm')
@@ -87,8 +102,8 @@ class WalletManager:
     self.remove_token_from_wallet_in_blockchain('BOMB','custom_cwl','Base')
     self.compare_new_wallets_to_ref_wallets()
     self.save_my_personal_wallets()
-    self.mes_wallets = {}
-    self.import_and_compare_custom_wallets_from_json_file(f"{self.wallex_data_dir}all_my_wallets.json")
+    self.import_and_compare_custom_wallets_from_json_file(self.all_wallets_filename,from_scratch=True)
+    #self.save_mes_wallets_as_ref_wallets(force_init_ref=True)
     self.get_total_by_wallet()
 
   def launch_new_scrapping(self):
@@ -115,11 +130,18 @@ class WalletManager:
         return True
       else:
         return False
+  
+  def extract_real_symbol(self,long_symbol:str):
+    symbol_composition = long_symbol.split("_")
+    c_size = len(symbol_composition)
+    real_symbol = symbol_composition[c_size-1]
+    return real_symbol
 
   def get_strategie_names_for_token_in_strategie_tags(self,token_symbol:str,strategies: list):
     names = []
     for strategie in strategies:
-      if token_symbol in self.tags[strategie]['tokens']:
+      real_symbol = self.extract_real_symbol(token_symbol)
+      if real_symbol in self.tags[strategie]['tokens']:
         names.append(strategie)
     return names
 
@@ -201,7 +223,7 @@ class WalletManager:
               tokens[token]['protocol'] = 'protocol_oublié'
             new_wallet.add_json_entry(tokens[token])
     new_wallet.name = wallet.name
-    self.mes_wallets.update({new_wallet.name:new_wallet})
+    #self.mes_wallets.update({new_wallet.name:new_wallet})
     return new_wallet
 
 
@@ -228,8 +250,11 @@ class WalletManager:
     return w3
 
   def export_wallet_as_json(self,wallet:Wallet.Tokens):
+    return {wallet.name:wallet.get_json_tokens_by_blockchain()}
+
+  def export_wallet_as_json_(self,wallet:Wallet.Tokens):
     blockchains = {}
-    for blockchain in wallet.entries:
+    for blockchain in wallet.get_list_blockchain():
       blockchains[blockchain] = {}
       for token in wallet.entries[blockchain]:
         entry: Token.Token = wallet.entries[blockchain][token]
@@ -248,9 +273,12 @@ class WalletManager:
     blockchains = resultat[wallet.name]
     return blockchains
 
-  def import_and_compare_custom_wallets_from_json_file(self,filename="custom_wallets.json"):
+  def import_and_compare_custom_wallets_from_json_file(self,filename="custom_wallets.json",from_scratch=False):
+    if from_scratch:
+      self.mes_wallets = {}
     self.import_custom_wallets_from_json_file(filename)
     self.compare_new_wallets_to_ref_wallets()
+    #self.ref_wallets = self.save_mes_wallets_as_ref_wallets()
 
   def import_ref_wallets_from_json_file(self,filename=None):
     if not filename:
@@ -276,16 +304,20 @@ class WalletManager:
     c = self.config
     c.save_to_file(filename,self.wallets_to_export)
 
-  def save_mes_wallets_as_ref_wallets(self,filename=None):
+  def save_mes_wallets_as_ref_wallets(self,filename=None,force_init_ref=False):
+    if len(self.mes_wallets) == 0:
+      return self.ref_wallets
     nom_wallets_cible = self.mes_wallets.keys()
     saved_wallets = {}
     for name in nom_wallets_cible:
       self.mes_wallets[name].name = name
-      self.mes_wallets[name].init_ref_exchange_rate()
+      self.mes_wallets[name].init_ref_values(force_init_ref)
       saved_wallets.update(self.export_ref_wallet_as_json(self.mes_wallets[name]))
+      saved_wallets = saved_wallets.copy()
     if not filename:
       filename = self.ref_wallets_filename
     self.config.save_to_file(filename,saved_wallets)
+    self.import_ref_wallets_from_json_file(filename)
     return saved_wallets
 
   def get_list_wallets(self):
@@ -296,8 +328,8 @@ class WalletManager:
     for name in nom_wallet_cible:
       self.mes_wallets[name].name = name
       self.export_custom_wallet_as_json(self.mes_wallets[name])
-    saved_wallets = self.save_exported_wallets(f"{self.wallex_data_dir}all_my_wallets.json")
-    saved_wallets = self.save_exported_wallets(f"{self.wallex_data_dir}ref_wallets.json")
+    saved_wallets = self.save_exported_wallets(self.all_wallets_filename)
+    saved_wallets = self.save_exported_wallets(self.ref_wallets_filename)
     return saved_wallets
 
   def update_all_my_wallets(self,refresh_quotes=False,recover_updated_exchange_rate=False):
@@ -411,7 +443,9 @@ class WalletManager:
       famille = ligne['famille']
       strategie = ligne['strategie']
       vision = ligne['vision']
-      origine = "csv"
+      origine = 'csv'
+      if 'origine' in ligne:
+        origine = ligne['origine']
       position = ligne['position']
       if 'protocol' in ligne:
         protocol = ligne['protocol']
@@ -427,6 +461,26 @@ class WalletManager:
         ref_date_comparaison = ref_date
       if 'last_update' in ligne:
         last_update = ligne['last_update']
+      else:
+        last_update = ref_date
+      if origine == 'complexe':
+        symbol = id_token.split("_")[-1]
+        name = id_token.split("_")[0]
+        id_token = f"{name}_{position}_{symbol}"
+        origine = "csv_complexe"
+      ref_native_balance = native_balance
+      if 'ref_native_balance' in ligne:
+        ref_native_balance = ligne['ref_native_balance']
+      elif wallet in self.ref_wallets:
+        iwallet: Wallet.Tokens = self.ref_wallets[wallet]
+        if iwallet.get_detailled_token_infos_on_blockchain(id_token,blockchain):
+          r = iwallet.get_detailled_token_infos_on_blockchain(id_token,blockchain)
+          if 'ref_native_balance' in r:
+            if str(r['ref_native_balance']).startswith("7.8770"):
+              print(f"--------------------------------------->{r}")
+              print(token)
+              raise Exception("stop")
+            ref_native_balance = r['ref_native_balance']
 
 
 
@@ -434,7 +488,7 @@ class WalletManager:
         wallets_from_csv[wallet] = {}
       if blockchain not in wallets_from_csv[wallet]:
         wallets_from_csv[wallet][blockchain] = {}
-      wallets_from_csv[wallet][blockchain].update({token:{ "id":id_token, "name":name, "symbol":token, "native_balance":native_balance, "exchange_rate":exchange_rate,"ref_exchange_rate":ref_exchange_rate,"ref_date_comparaison":ref_date_comparaison, "usd_balance":usd_balance, "type":"Manuel", "blockchain":blockchain,"origine":origine,"famille":famille,"vision":vision,"strategie": strategie,"protocol":protocol,"position":position,"last_update":last_update }})
+      wallets_from_csv[wallet][blockchain].update({id_token:{ "id":id_token, "name":name, "symbol":id_token, "native_balance":native_balance, "exchange_rate":exchange_rate,"ref_exchange_rate":ref_exchange_rate,"ref_date_comparaison":ref_date_comparaison,"ref_native_balance":ref_native_balance, "usd_balance":usd_balance, "type":"Manuel", "blockchain":blockchain,"origine":origine,"famille":famille,"vision":vision,"strategie": strategie,"protocol":protocol,"position":position,"last_update":last_update }})
       self.config.save_to_file(output_filename,wallets_from_csv)
 
   def copy_wallet(self,name):
@@ -466,22 +520,39 @@ class WalletManager:
         new_wallet: Wallet.Tokens = self.mes_wallets[wallet]
         if wallet in ref_wallets:
           if isinstance(ref_wallets[wallet],dict) :
-            ref_wallet: Wallet.Tokens = Wallet.Tokens(self.ref_wallets[wallet])
+            ref_wallet: Wallet.Tokens = Wallet.Tokens(wallet)
+            ref_wallet.add_json_entries_from_multi_blockchain(self.ref_wallets[wallet])
+            raise Exception("Hey ya un dict")
           else:
             ref_wallet: Wallet.Tokens = self.ref_wallets[wallet]
-          for blockchain in new_wallet.entries:
-            for token in new_wallet.entries[blockchain]:
-              if blockchain in ref_wallet.entries:
-                if token in ref_wallet.entries[blockchain]:
-                  ref_token = ref_wallet.entries[blockchain][token]
-                  new_wallet.entries[blockchain][token].copy_ref_values(ref_token) 
+          for blockchain in new_wallet.get_list_blockchain():
+            for token in new_wallet.get_list_tokens_on_blockchain(blockchain):
+              if ref_wallet.get_token_on_blockchain(token,blockchain):
+                ref_token = ref_wallet.get_token_on_blockchain(token,blockchain)
+                new_wallet.update_ref_for_token_in_blockchain_with_token(blockchain,token,ref_token) 
           self.mes_wallets.update({wallet:new_wallet})
 
   def generate_ref_wallets_from_csv(self,csv_file,ref_date):
     self.convert_complete_csv_wallets_to_json_file(csv_file,self.ref_wallets_filename,ref_date)
     self.import_custom_wallets_from_json_file(self.ref_wallets_filename)
-    self.ref_wallets = copy.deepcopy(self.mes_wallets)
     self.compare_new_wallets_to_ref_wallets()
+    self.ref_wallets = copy.deepcopy(self.mes_wallets)
+
+  def complete_ref_wallets(self,ref_wallets,mes_wallets):
+    # instead of deep copy we add new entry and keeps older
+    # encours
+    for wallet in mes_wallets:
+      if wallet in ref_wallets:
+        ref_wallet: Wallet.Tokens = ref_wallets[wallet]
+        mon_wallet: Wallet.Tokens = mes_wallets[wallet]
+        for blockchain in mon_wallet.get_list_blockchain():
+          if blockchain in ref_wallet.get_list_blockchain():
+            for token in mon_wallet.get_list_tokens_on_blockchain(blockchain):
+              if token in ref_wallet.get_list_tokens_on_blockchain(blockchain):
+                ntoken: Token.Token = mon_wallet.get_token_on_blockchain(token,blockchain)
+                  #ref_wallet.update_ref_token_on_blockchain(mon_wallet.get_token_on_blockchain(token,blockchain))
+      else:
+        ref_wallets[wallet] = mes_wallets[wallet]
 
   def copy_and_add_wallet(self,account,name,type_wallet,refresh_quote=False):
     old_wallet = self.copy_wallet(name)
@@ -500,10 +571,10 @@ class WalletManager:
   def create_custom_tags_and_manual_wallets(self,last_update = None):
     wallex_common_data_dir = self.config.wallex_common_data_dir
     config_dir = self.config.wallex_config_dir
-    csv_preparation_file = f"{config_dir}extra_position.txt"
-    manual_tags_file = f"{config_dir}tags.json"
-    auto_tags_file = f"{wallex_common_data_dir}tags.json"
-    manual_wallets_filename = f"{wallex_common_data_dir}manual_wallets_.json"
+    csv_preparation_file = self.csv_preparation_file
+    manual_tags_file = self.manual_tags_file
+    auto_tags_file = self.tags_file
+    manual_wallets_filename = self.manual_wallets_filename
     resultat = [[x for x in line.split(":")] for line in open(csv_preparation_file) if len(line) > 1 and "#" not in line]
 
     tags = self.config.load_file(manual_tags_file)

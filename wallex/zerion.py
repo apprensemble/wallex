@@ -36,18 +36,22 @@ def parse_response_and_return_wallet(rjson,origine="simple",refresh=False):
       else:
         usd_balance = 0.0
       blockchain = token['relationships']['chain']['data']['id']
-      if origine == "complexe":
-        name = token['attributes']['name']
-        symbol = token['attributes']['fungible_info']['symbol'] 
-        symbol = f"{name}_{symbol}"
-      else:
-        name = token['attributes']['fungible_info']['name']
-        symbol = token['attributes']['fungible_info']['symbol'] 
       position = token['attributes']['position_type']
       protocol = token['attributes']['protocol']
       if not protocol:
         protocol = 'libre'
       # AVAX et WAVAX ont le symbol AVAX sur zerion
+      if origine == "complexe":
+        name = token['attributes']['name']
+        symbol = token['attributes']['fungible_info']['symbol'] 
+        full_symbol = f"{name}_{position}_{symbol}"
+      else:
+        name = token['attributes']['fungible_info']['name']
+        symbol = token['attributes']['fungible_info']['symbol'] 
+        full_symbol = f"{symbol}"
+      if blockchain in mon_wallet.entries:
+        if symbol in mon_wallet.entries[blockchain]:
+          print(f"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx->{symbol}")
       if blockchain.capitalize() == 'Binance-smart-chain':
         blockchain = "BNB"
       if name == 'Wrapped AVAX':
@@ -59,9 +63,9 @@ def parse_response_and_return_wallet(rjson,origine="simple",refresh=False):
       else:
         last_update = None
       entry = {
-        'id': symbol,
+        'id': full_symbol,
         'name': name,
-        'symbol': symbol,
+        'symbol': full_symbol,
         'contract_address': token['id'].split("-")[0],
         'native_balance': native_balance,
         'usd_balance': usd_balance,

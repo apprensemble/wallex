@@ -21,11 +21,14 @@ class Tokens:
         return self.entries
 
     def add_entry(self,token: Token.Token):
+        if not isinstance(token,Token.Token):
+            raise Exception(f"arg nest pas de type {Token.Token} mais de type {type(token)}")
         try:
             if token.id not in self.entries[token.blockchain]:
                 self.entries[token.blockchain][token.id] = token
             elif self.entries[token.blockchain][token.id].is_same_position(token):
                 self.entries[token.blockchain][token.id].sum_token_values(token)
+                print(f"----------------------------------->token{token.id} added")
             else:
                 raise Exception(f"-------------------------------{token} dans la meme blockchain mais pas de meme type")
         except KeyError:
@@ -33,7 +36,7 @@ class Tokens:
             self.entries[token.blockchain][token.id] = token
         return self.entries
 
-    def sum_balance_by_blockchain(self):
+    def sum_balance_by_blockchain(self,bc=None):
         entries = self.entries
         resultat = {}
         for blockchain in self.entries.keys():
@@ -45,7 +48,10 @@ class Tokens:
                 resultat[blockchain] += entries[blockchain][key].usd_balance
                 resultat[blockchain] = round(resultat[blockchain],2)
         self.balance_by_blockchain = resultat
-        return self.balance_by_blockchain
+        if bc:
+            return self.balance_by_blockchain[bc]
+        else:
+            return self.balance_by_blockchain
 
     def sum_total_balance(self):
         balances = self.sum_balance_by_blockchain()
@@ -110,10 +116,10 @@ class Tokens:
         try: 
             split_index = index.split("_")
             if len(split_index) == 2:
-                erindex = split_index[1]
-                token.add_exchange_rate(parsed_quotes[erindex]['exchange_rate'])
+                erindex = split_index[-1]
+                token.add_exchange_rate(parsed_quotes[erindex]['exchange_rate'],parsed_quotes['last_update'])
             else:
-                token.add_exchange_rate(parsed_quotes[index]['exchange_rate'])
+                token.add_exchange_rate(parsed_quotes[index]['exchange_rate'],parsed_quotes['last_update'])
         except KeyError as k:
             token.compute_usd_balance()
             print(k,"is missing from cmc_parsed_quotes")
@@ -138,13 +144,12 @@ class Tokens:
                 self.call_add_exchange_rate(entries[blockchain][index],parsed_quotes,index)
         return entries
 
-    def init_ref_exchange_rate(self):
+    def init_ref_values(self,force_init_ref=False):
         entries = self.entries
         for blockchain in entries.keys():
             for index in entries[blockchain]:
-                entries[blockchain][index].init_ref_exchange_rate()
+                entries[blockchain][index].init_ref_values(force_init_ref)
         return entries
-
 
     def remove_token_from_blockchain(self,symbol,blockchain):
         removed_symbol = ""
@@ -155,7 +160,6 @@ class Tokens:
         except KeyError as ke:
             print(ke)
         return removed_symbol
-
 
     #separated by ,
     def remove_tokens_from_blockchain(self,symbols,blockchain):
@@ -172,31 +176,14 @@ class Tokens:
                 removed_symbols[symbol.upper()] = self.remove_token_from_blockchain(symbol,blockchain)
         return removed_symbols
 
-    def list_tokens(self):
+    def get_tokens_without_exchange_rate(self):
+        list_tokens_without_exchange_rate = []
         for blockchain in self.entries:
-            print(" ")
-            print(blockchain)
-            print(" ")
-            for token in self.entries[blockchain]:
-                print(self.entries[blockchain][token].get_json_entry())
-
-    def show_usd_prices(self):
-        for blockchain in self.entries:
-            print(" ")
-            print(blockchain)
-            print(" ")
-            for token in self.entries[blockchain]:
-                self.entries[blockchain][token].show_usd_price()
-
-    def show_tokens_without_exchange_rate(self):
-        for blockchain in self.entries:
-            print(" ")
-            print(blockchain)
-            print(" ")
             for token in self.entries[blockchain]:
                 if self.entries[blockchain][token].missing_exchange_rate:
                     entry = self.entries[blockchain][token]
-                    print(entry.id," ",entry.native_balance)
+                    list_tokens_without_exchange_rate.append({entry.id:entry.native_balance})
+        return list_tokens_without_exchange_rate
 
     def get_detailled_balance_by_blockchain(self):
         bc = {}
@@ -216,6 +203,17 @@ class Tokens:
             for token in self.entries[blockchain]:
                 try:
                     bc[blockchain].append({token:self.entries[blockchain][token].get_json_entry()})
+                except AttributeError:
+                    continue
+        return bc
+
+    def get_json_tokens_by_blockchain(self):
+        bc = {}
+        for blockchain in self.entries:
+            bc[blockchain] = {}
+            for token in self.entries[blockchain]:
+                try:
+                    bc[blockchain].update({token:self.entries[blockchain][token].get_json_entry()})
                 except AttributeError:
                     continue
         return bc
@@ -294,4 +292,71 @@ class Tokens:
         if resultat == True:
             self.rename_token_in_blockchain(old_name,new_name,blockchain)
         return resultat
+
+    def get_detailled_token_infos_on_blockchain(self,token,blockchain):
+        resultat = False
+        if blockchain in self.entries:
+                for element in self.entries[blockchain].keys():
+                    if token == element:
+                        resultat = self.entries[blockchain][element].get_json_entry()
+        return resultat
+
+    def select_valid_ref_values(self,token1: Token.Token,token2: Token.Token):
+        laste_update = None
+        ref_date_comparaison = None
+        ref_exchange_rate = None
+        ref_native_balance = None
+        ptoken: Token.Token = None
+
+        if token1.last_update and token2.last_update:
+            last_update = token1.last_update if token1.last_update >= token2.last_update else token2.last_update
+        elif token2.last_update:
+            last_update = token2.last_update
+        else:
+            last_update = token1
+        if token1.ref_date_comparaison and token2.ref_date_comparaison:
+            if token1.ref_date_comparaison <= token2.ref_date_comparaison:
+                ptoken = token1
+                ref_date_comparaison = token1.ref_date_comparaison
+            else:
+                ptoken = token2
+                ref_date_comparaison = token2.ref_date_comparaison
+        elif token2.ref_date_comparaison:
+            ptoken = token2
+            ref_date_comparaison = token2.ref_date_comparaison
+        elif token1.ref_date_comparaison:
+            ptoken = token1
+            ref_date_comparaison = token1.ref_date_comparaison
+        else:
+            return last_update,ref_date_comparaison,ref_exchange_rate,ref_native_balance
+        if ref_date_comparaison:
+            ref_exchange_rate = ptoken.ref_exchange_rate
+            ref_native_balance = ptoken.ref_native_balance
+        return last_update,ref_date_comparaison,ref_exchange_rate,ref_native_balance
+
+    def isInblockchain(self,blockchain):
+        return blockchain in self.entries
+
+    def get_list_blockchain(self):
+        return list(self.entries.keys())
+
+    def get_list_tokens_on_blockchain(self,blockchain):
+        if blockchain in self.entries:
+            return list(self.entries[blockchain].keys())
+        return []
+
+    def get_token_on_blockchain(self,token,blockchain):
+        if blockchain in self.entries:
+            if token in self.entries[blockchain]:
+                return self.entries[blockchain][token]
+        return []
+
+    def update_ref_for_token_in_blockchain_with_token(self,blockchain: str,token: str,ref_token: Token.Token):
+        if blockchain in self.entries:
+            if token in self.entries[blockchain]:
+                self.entries[blockchain][token].determine_and_add_ref_values(ref_token)
+
+
+
+
          

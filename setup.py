@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 setup(
     name='wallex',
     packages=find_packages(include=['wallex']),
-    version='0.5.9.6',
+    version='0.5.9.7',
     description='A simple wallet explorer via Blockscout, Zerion, Moralis and CMC',
     author='CryptoGrillon',
     install_requires=['selenium','requests','typing','pandas'],

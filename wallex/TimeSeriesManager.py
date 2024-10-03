@@ -184,7 +184,7 @@ class TimeSeriesManager():
   def get_full_df(self):
     wm = self.wm
     all_wallets = wm.mes_wallets
-    dfp = {'wallet':[],'bc':[],'token_full_name':[],'token':[],'exchange_rate':[],'ref_exchange_rate':[],'ref_date_comparaison':[],'native_balance':[],'usd_balance':[],'famille':[],'strategie':[],'protocol':[],'vision':[],'position':[],'origine':[]}
+    dfp = {'wallet':[],'bc':[],'token_full_name':[],'token':[],'symbol':[],'exchange_rate':[],'ref_exchange_rate':[],'ref_date_comparaison':[],'native_balance':[],'usd_balance':[],'famille':[],'strategie':[],'protocol':[],'vision':[],'position':[],'origine':[]}
     check = lambda token,strategie: True if token in self.get_dataset_from_strategie(strategie)['labels'] else False
     for wallet in all_wallets:
       blockchains = all_wallets[wallet].get_detailled_tokens_infos_by_blockchain()
@@ -194,6 +194,7 @@ class TimeSeriesManager():
             dfp['wallet'].append(wallet)
             dfp['bc'].append(bc)
             dfp['token'].append(token)
+            dfp['symbol'].append(tokens[token]['symbol'])
             dfp['token_full_name'].append(tokens[token]['name'])
             dfp['native_balance'].append(tokens[token]['native_balance'])
             dfp['origine'].append(tokens[token]['origine'])
@@ -303,6 +304,8 @@ class TimeSeriesManager():
 
   def calcul_pct_from_diff(self,avant,apres):
     #p = lambda avant,apres: str(apres/avant*100-100)+" %"
+    avant = float(avant)
+    apres = float(apres)
     if avant == 0:
       return 100
     return apres/avant*100-100
@@ -350,20 +353,31 @@ class TimeSeriesManager():
     return resultat
 
   def calcul_ecart_pct_token(self,token):
+    if not token['ref_native_balance']:
+      token['ref_native_balance'] = 0.0
+    if not token['ref_exchange_rate']:
+      token['ref_exchange_rate'] = 0.0
     try:
-      prix_debut = token['native_balance'] * token['ref_exchange_rate']
+      prix_debut = float(token['ref_native_balance']) * float(token['ref_exchange_rate'])
       prix_fin = token['usd_balance']
       resultat =  round(self.calcul_pct_from_diff(token['ref_exchange_rate'],token['exchange_rate']),2)
       #gainNR = round(prix_fin - prix_debut,2)
       #resultat = f"G/Pnr {gainNR} -> ({resultat} %)"
     except Exception as e:
       print(token['name'])
+      print(token['ref_native_balance'])
+      print(token['ref_exchange_rate'])
       print(traceback.format_exc())
       resultat = 0
     return resultat
 
   def convert_seconds_to_rdate(self,seconds):
-    return time.strftime("%d/%m/%Y à %H:%M",time.localtime(seconds))
+    try:
+      return time.strftime("%d/%m/%Y à %H:%M",time.localtime(seconds))
+    except:
+      return time.strftime("%d/%m/%Y à %H:%M",time.localtime(time.time()))
+      
+
 
   def convert_rdate_to_seconds(self,rdate):
     rtuple = time.strptime(rdate, "%d/%m/%Y à %H:%M")

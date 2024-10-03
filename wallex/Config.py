@@ -15,6 +15,11 @@ class Config:
         self.wallex_common_data_dir = config_file['infos_globale']['wallex_common_data_dir']
         self.wallex_csv_dir = config_file['infos_globale']['wallex_csv_dir']
         self.wallex_config_dir = config_file['infos_globale']['wallex_config_dir']
+        #mode test files
+        self.wallex_common_data_dir_test = config_file['infos_globale']['wallex_common_data_dir_test']
+        self.wallex_csv_dir_test = config_file['infos_globale']['wallex_csv_dir_test']
+        self.wallex_config_dir_test = config_file['infos_globale']['wallex_config_dir_test']
+
         self.cmc_file = f"{self.wallex_common_data_dir}{config_file['infos_globale']['cmc_file']}"
         self.cmc_api_key = config_file['private_keys']['cmc_api_key']
         self.moralis_api_key = config_file['private_keys']['moralis_api_key']
