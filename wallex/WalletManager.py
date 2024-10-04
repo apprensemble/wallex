@@ -529,7 +529,7 @@ class WalletManager:
             for token in new_wallet.get_list_tokens_on_blockchain(blockchain):
               if ref_wallet.get_token_on_blockchain(token,blockchain):
                 ref_token = ref_wallet.get_token_on_blockchain(token,blockchain)
-                new_wallet.update_ref_for_token_in_blockchain_with_token(blockchain,token,ref_token) 
+                new_wallet.update_ref_for_token_in_blockchain_with_token(blockchain,token,ref_token,force_init_ref=True) 
           self.mes_wallets.update({wallet:new_wallet})
 
   def generate_ref_wallets_from_csv(self,csv_file,ref_date):

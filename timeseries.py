@@ -3,11 +3,13 @@ import sys, getopt
 from wallex import WalletManager, TimeSeriesManager
 def help():
   print ('timeseries.py [-r] to refresh quotes')
+  print ('timeseries.py [-t] to use test files')
 
 def main(argv):
   refresh = False
+  mode_test = False
   try:
-    opts, args = getopt.getopt(argv,"hr",["refresh"])
+    opts, args = getopt.getopt(argv,"hrt",["refresh"])
   except getopt.GetoptError:
     help()
     sys.exit(2)
@@ -16,8 +18,12 @@ def main(argv):
       help()
       sys.exit()
     elif opt in ("-r", "--refresh"):
+      print("refresh quotes...")
       refresh = True
-  wm = WalletManager.WalletManager()
+    elif opt in ("-t", "--mode_test"):
+      print("mode test activated...")
+      mode_test = True
+  wm = WalletManager.WalletManager(mode_test=mode_test)
   wm.fulfill_wallet_manager(refresh)
   wm.get_total_by_wallet(True)
   ts = TimeSeriesManager.TimeSeriesManager()

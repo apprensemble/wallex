@@ -351,10 +351,10 @@ class Tokens:
                 return self.entries[blockchain][token]
         return []
 
-    def update_ref_for_token_in_blockchain_with_token(self,blockchain: str,token: str,ref_token: Token.Token):
+    def update_ref_for_token_in_blockchain_with_token(self,blockchain: str,token: str,ref_token: Token.Token,force_init_ref=False):
         if blockchain in self.entries:
             if token in self.entries[blockchain]:
-                self.entries[blockchain][token].determine_and_add_ref_values(ref_token)
+                self.entries[blockchain][token].determine_and_add_ref_values(ref_token,force_init_ref)
 
 
 
