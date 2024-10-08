@@ -1,17 +1,8 @@
 from wallex import Token,solana,Wallet,base,Config, optimism, arbitrum, mantle, zerion, WalletManager,TimeSeriesManager
 from importlib import reload
-from enum import Enum
-
-class Info(Enum):
-  ER = 'exchange_rate'
-  USD = 'usd_balance'
-  DATE = 'ref_date_comparaison'
-  RER = 'ref_exchange_rate'
-  NB = 'native_balance'
-  LU = 'last_update'
+from wallex.Config import Info
 
 class AssistantDebug:
-
 
   def __init__(self):
     ts = TimeSeriesManager.TimeSeriesManager()

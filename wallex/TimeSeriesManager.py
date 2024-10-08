@@ -1,7 +1,10 @@
 from wallex import WalletManager,Logger,Config,RRTagger
+import os
+from wallex.Config import Info,Categorie
 import pandas as pd
 import time
 import traceback
+import re
 
 class TimeSeriesManager():
 
@@ -234,7 +237,7 @@ class TimeSeriesManager():
           for token in tokens:
             for i in dfp:
               if i == 'UP':
-                dfp['UP'].append(self.calcul_ecart_pct_token(tokens[token]))
+                dfp['UP'].append(self.calcul_ecart_pct_token(tokens[token],origine=tokens[token]['origine']))
               elif i == 'token_full_name':
                 dfp['token_full_name'].append(tokens[token]['name'])
               elif i == 'wallet':
@@ -259,13 +262,35 @@ class TimeSeriesManager():
     for col in rr_column:
       df[col] = 0.0
     for token in df['token'].unique():
-      df.loc[df['token'] == token,'tp'] = rr.load_simulation_rr(token)['tp']
-      df.loc[df['token'] == token,'sl'] = rr.load_simulation_rr(token)['sl']
-      df.loc[df['token'] == token,'rr'] = rr.load_simulation_rr(token)['rr']
-      df.loc[df['token'] == token,'ppmax'] = rr.get_capital(token)['ppmax']
-      df.loc[df['token'] == token,'capital'] = rr.get_capital(token)['capital']
-      df.loc[df['token'] == token,'gainEst'] = rr.load_simulation_rr(token)['gainEst']
-      df.loc[df['token'] == token,'perteEst'] = rr.load_simulation_rr(token)['perteEst']
+      simrr = rr.load_simulation_rr(token.split("_")[-1])
+      simcap = rr.get_capital(token.split("_")[-1])
+      df.loc[df['token'] == token,'tp'] = simrr['tp']
+      df.loc[df['token'] == token,'sl'] = simrr['sl']
+      df.loc[df['token'] == token,'rr'] = simrr['rr']
+      df.loc[df['token'] == token,'ppmax'] = simcap['ppmax']
+      df.loc[df['token'] == token,'capital'] = simcap['capital']
+      df.loc[df['token'] == token,'gainEst'] = simrr['gainEst']
+      df.loc[df['token'] == token,'perteEst'] = simrr['perteEst']
+    return df
+
+  def get_full_df_with_rr_auto(self):
+   #"tp":[],"sl":[],"ppmax":[],"capital":[],"rr":[],"gainEst":[],"perteEst":[] 
+   # encours : aucune idée haha
+    rr = self.rr
+    rr_column = ["tp","sl","ppmax","capital","rr","gainEst","perteEst"]
+    df = self.get_full_df_with_apr()
+    for col in rr_column:
+      df[col] = 0.0
+    for token in df['token'].unique():
+      simrr = rr.load_simulation_rr(token.split("_")[-1])
+      simcap = rr.get_capital(token.split("_")[-1])
+      df.loc[df['token'] == token,'tp'] = simrr['tp']
+      df.loc[df['token'] == token,'sl'] = simrr['sl']
+      df.loc[df['token'] == token,'rr'] = simrr['rr']
+      df.loc[df['token'] == token,'ppmax'] = simcap['ppmax']
+      df.loc[df['token'] == token,'capital'] = simcap['capital']
+      df.loc[df['token'] == token,'gainEst'] = simrr['gainEst']
+      df.loc[df['token'] == token,'perteEst'] = simrr['perteEst']
     return df
 
   def create_daily_list_for_apy(self,apr,sommes,jours,box):
@@ -339,11 +364,14 @@ class TimeSeriesManager():
     ecart_j = ecart_s / 60 / 60 /24
     return ecart_j
 
-  def calcul_apr_token(self,token):
+  def calcul_apr_token(self,token,origine='simple'):
     try:
       date_fin = time.time()
       date_debut = token['ref_date_comparaison']
-      prix_debut = token['native_balance'] * token['ref_exchange_rate']
+      if origine == 'complexe':
+        prix_debut = token['ref_native_balance'] * token['ref_exchange_rate']
+      else:
+        prix_debut = token['native_balance'] * token['ref_exchange_rate']
       prix_fin = token['usd_balance']
       nbr_jours = self.calcul_ecart_en_jours(date_debut,date_fin)
       resultat =  self.calcul_apr_from_diff(prix_debut,prix_fin,nbr_jours)
@@ -352,15 +380,19 @@ class TimeSeriesManager():
       resultat = 0
     return resultat
 
-  def calcul_ecart_pct_token(self,token):
+  def calcul_ecart_pct_token(self,token,origine="simple"):
     if not token['ref_native_balance']:
       token['ref_native_balance'] = 0.0
     if not token['ref_exchange_rate']:
       token['ref_exchange_rate'] = 0.0
     try:
-      prix_debut = float(token['ref_native_balance']) * float(token['ref_exchange_rate'])
+      if origine == "complexe":
+        prix_debut = float(token['ref_native_balance']) * float(token['ref_exchange_rate'])
+      else:
+        prix_debut = float(token['native_balance']) * float(token['ref_exchange_rate'])
       prix_fin = token['usd_balance']
-      resultat =  round(self.calcul_pct_from_diff(token['ref_exchange_rate'],token['exchange_rate']),2)
+      #resultat =  round(self.calcul_pct_from_diff(token['ref_exchange_rate'],token['exchange_rate']),2)
+      resultat =  round(self.calcul_pct_from_diff(prix_debut,prix_fin),2)
       #gainNR = round(prix_fin - prix_debut,2)
       #resultat = f"G/Pnr {gainNR} -> ({resultat} %)"
     except Exception as e:
@@ -383,11 +415,101 @@ class TimeSeriesManager():
     rtuple = time.strptime(rdate, "%d/%m/%Y à %H:%M")
     return time.mktime(rtuple)
 
+  def convert_df_date(self,df):
+    df['date'] = pd.to_datetime(df['date'],unit='s')
+    return df
 
 
+  def get_historic_data(self,csv_filename_month_day_hour_part,col,keyword,precisely=True,sortie: Info = Info.USD,ignore_case=False):
+    # trop de liberté dans cette methode
 
+    csv_filename_prefix = "wallex_csv/wallex_full_df_24"
+    csv_filename_suffixe = ".csv"
+    csv_filename = f"{csv_filename_prefix}{csv_filename_month_day_hour_part}{csv_filename_suffixe}"
+    target = 0
+    if not os.path.exists(csv_filename):
+      return 0
+    case = (ignore_case - 1) * - 1 # on inverse
+    df = pd.read_csv(csv_filename)
+    if col in df:
+      if precisely:
+        target = df.loc[df[col] == keyword]
+      else:
+        target = df.loc[df[col].str.contains(keyword,case=case)]
+    else:
+      return 0
+    return target
+
+  def get_historic_datas_by_categorie_(self,categorie: Categorie = Categorie.FAMILLE,target = 'SOL'):
+    historic_dates = []
+    historic_datas = []
+    # mois 9
+    for i in range(16,23):
+      mjh = f"09{i}09"
+      historic_dates.append(time.mktime((2024, 9, i, 9, 0, 0, 0, 0, 0)))
+      historic_datas.append(self.get_historic_sum_by(mjh,categorie,target))
+    for i in range(24,31):
+      mjh = f"09{i}08"
+      historic_dates.append(time.mktime((2024, 9, i, 8, 0, 0, 0, 0, 0)))
+      historic_datas.append(self.get_historic_sum_by(mjh,categorie,target))
+    for i in range(1,3):
+      mjh = f"100{i}08"
+      historic_dates.append(time.mktime((2024, 10, i, 8, 0, 0, 0, 0, 0)))
+      historic_datas.append(self.get_historic_sum_by(mjh,categorie,target))
+    for i in range(3,9):
+      mjh = f"100{i}08"
+      historic_dates.append(time.mktime((2024, 10, i, 8, 0, 0, 0, 0, 0)))
+      historic_datas.append(self.get_historic_sum_by(mjh,categorie,target))
+      historic_dates.append(time.mktime((2024, 10, i, 14, 0, 0, 0, 0, 0)))
+      historic_datas.append(self.get_historic_sum_by(mjh,categorie,target))
+      historic_dates.append(time.mktime((2024, 10, i, 20, 0, 0, 0, 0, 0)))
+      historic_datas.append(self.get_historic_sum_by(mjh,categorie,target))
+      historic_dates.append(time.mktime((2024, 10, i, 2, 0, 0, 0, 0, 0)))
+      historic_datas.append(self.get_historic_sum_by(mjh,categorie,target))
+
+    df = pd.DataFrame({'date':historic_dates,target:historic_datas})
+    return df
+
+  def get_historic_datas_by_categorie(self,categorie: Categorie = Categorie.FAMILLE,target = 'SOL'):
+    historic_dates = []
+    historic_datas = []
+    # mois 9
+    file_list = os.listdir("wallex_csv")
+    file_list.sort()
+    for x in file_list:
+      if x.startswith("wallex_full"):
+        pdate = x.split("_")[3]
+        pdate = pdate.split(".")[0]
+        pdate = re.findall(r'\d{2}',pdate)
+        mjh = "".join(pdate[1:])
+        historic_dates.append(time.mktime((int(f"20{pdate[0]}"), int(f"{pdate[1]}"), int(f"{pdate[2]}"), int(f"{pdate[3]}"), 0, 0, 0, 0, 0)))
+        historic_datas.append(self.get_historic_sum_by(mjh,categorie,target))
+    df = pd.DataFrame({'date':historic_dates,target:historic_datas})
+    return df
+
+  def get_historic_datas_for_categorie(self,categorie:Categorie = Categorie.FAMILLE):
+    x = 0
+    # mois 9
+    df = pd.DataFrame()
+    for target in self.get_list_for_categorie('100308',categorie):
+      if x < 1:
+        df = self.get_historic_datas_by_categorie(categorie,target)
+        df['date'] = pd.to_datetime(df['date'],unit='s')
+      else:
+        df = pd.concat([df,self.get_historic_datas_by_categorie(categorie,target)[target]],axis=1)
+      x += 1
+    return df
+
+  def get_list_for_categorie(self,mjh,categorie: Categorie = Categorie.FAMILLE,target = ''):
+    df = self.get_historic_data(mjh,categorie.value,target,False)
+    if target != '':
+      return df['token'].unique()
+    else:
+      return df[categorie.value].unique()
+
+  def get_historic_sum_by(self,mjh,categorie: Categorie = Categorie.FAMILLE,target='SOL',sortie: Info = Info.USD):
+    df = self.get_historic_data(mjh,categorie.value,target,sortie)
+    if isinstance(df,pd.DataFrame):
+      df = df[sortie.value].sum()
+    return df
     
-    
-
-
-

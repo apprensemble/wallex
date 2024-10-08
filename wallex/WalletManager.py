@@ -104,7 +104,7 @@ class WalletManager:
     self.save_my_personal_wallets()
     self.import_and_compare_custom_wallets_from_json_file(self.all_wallets_filename,from_scratch=True)
     #self.save_mes_wallets_as_ref_wallets(force_init_ref=True)
-    self.get_total_by_wallet()
+    self.get_total_by_wallet(True)
 
   def launch_new_scrapping(self):
     scraper = Scraper.Scraper()

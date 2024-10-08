@@ -1,7 +1,25 @@
 import json
 from wallex import Cmc,Logger
+from enum import Enum
 
 # class de configuration myWalletLib
+class Info(Enum):
+  ER = 'exchange_rate'
+  USD = 'usd_balance'
+  DATE = 'ref_date_comparaison'
+  RER = 'ref_exchange_rate'
+  NB = 'native_balance'
+  LU = 'last_update'
+
+class Categorie(Enum):
+    FAMILLE = 'famille'
+    POSITION = 'position'
+    TOKEN = 'token'
+    STRATEGIE = 'strategie'
+    VISION = 'vision'
+    WALLET = 'wallet'
+    BC = 'bc'
+    PROTOCOL = 'protocol'
 
 class Config:
     logger: Logger
