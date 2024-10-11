@@ -36,7 +36,7 @@ class WalletManager:
     except:
       self.ref_wallets = {}
     #patch: il faut que j'externalise les truc perso
-    self.all_my_personnal_wallets = ['binance_sol', 'bybit_sol', 'cwsol', 'coinbasewallet', 'manual_telegram', 'manual_bitget', 'manual_cwdca','manual_egld', 'custom_cwl', 'custom_phantom_sol','custom_binance_evm', 'custom_bybit_evm', 'manual_keplr','manual_argentx','manual_subwallet']
+    self.all_my_personnal_wallets = ['binance_sol', 'bybit_sol', 'cwsol', 'coinbasewallet', 'manual_telegram', 'manual_bitget', 'manual_cwdca','manual_egld', 'custom_cwl', 'custom_phantom_sol','custom_binance_evm', 'custom_bybit_evm', 'manual_argentx','manual_subwallet']
 
   def call_refresh_quotes(self):
     self.parsed_quotes = self.config.cmc.get_parsed_quotes(True)
@@ -420,6 +420,74 @@ class WalletManager:
     for wallet in self.mes_wallets:
       resultat.update({wallet:self.mes_wallets[wallet].get_detailled_tokens_infos_by_blockchain()})
     return resultat
+
+  def convert_complete_csv_wallets_to_json_file_(self,input_filename,output_filename='wallet_from_csv.json',ref_date=time.time()):
+    df = pd.read_csv(input_filename)
+    wallets_from_csv = {}
+    last_update = None
+    for i,ligne in df.iterrows():
+      wallet = ligne['wallet']
+      blockchain = ligne['bc']
+      token = ligne['token']
+      if 'id_token' in ligne:
+        id_token = ligne['id_token']
+      else:
+        id_token = token
+      if 'token_full_name' in ligne:
+        name = ligne['token_full_name']
+      else:
+        name = token
+      exchange_rate = ligne['exchange_rate']
+      native_balance = ligne['native_balance']
+      usd_balance = ligne['usd_balance']
+      famille = ligne['famille']
+      strategie = ligne['strategie']
+      vision = ligne['vision']
+      origine = 'csv'
+      if 'origine' in ligne:
+        origine = ligne['origine']
+      position = ligne['position']
+      if 'protocol' in ligne:
+        protocol = ligne['protocol']
+      else:
+        protocol = 'A DEFINIR'
+      if 'ref_exchange_rate' in ligne:
+        ref_exchange_rate = ligne['ref_exchange_rate']
+      else:
+        ref_exchange_rate = exchange_rate
+      if 'ref_date_comparaison' in ligne:
+        ref_date_comparaison = ligne['ref_date_comparaison']
+      else:
+        ref_date_comparaison = ref_date
+      if 'last_update' in ligne:
+        last_update = ligne['last_update']
+      else:
+        last_update = ref_date
+      if origine == 'complexe':
+        symbol = id_token.split("_")[-1]
+        name = id_token.split("_")[0]
+        id_token = f"{name}_{position}_{symbol}"
+        origine = "csv_complexe"
+      ref_native_balance = native_balance
+      if 'ref_native_balance' in ligne:
+        ref_native_balance = ligne['ref_native_balance']
+      elif wallet in self.ref_wallets:
+        iwallet: Wallet.Tokens = self.ref_wallets[wallet]
+        if iwallet.get_detailled_token_infos_on_blockchain(id_token,blockchain):
+          r = iwallet.get_detailled_token_infos_on_blockchain(id_token,blockchain)
+          if 'ref_native_balance' in r:
+            if str(r['ref_native_balance']).startswith("7.8770"):
+              print(f"--------------------------------------->{r}")
+              print(token)
+              raise Exception("stop")
+            ref_native_balance = r['ref_native_balance']
+
+      if wallet not in wallets_from_csv:
+        wallets_from_csv[wallet] = {}
+      if blockchain not in wallets_from_csv[wallet]:
+        wallets_from_csv[wallet][blockchain] = {}
+      wallets_from_csv[wallet][blockchain].update({id_token:{ "id":id_token, "name":name, "symbol":id_token, "native_balance":native_balance, "exchange_rate":exchange_rate,"ref_exchange_rate":ref_exchange_rate,"ref_date_comparaison":ref_date_comparaison,"ref_native_balance":ref_native_balance, "usd_balance":usd_balance, "type":"Manuel", "blockchain":blockchain,"origine":origine,"famille":famille,"vision":vision,"strategie": strategie,"protocol":protocol,"position":position,"last_update":last_update }})
+      self.config.save_to_file(output_filename,wallets_from_csv)
 
   def convert_complete_csv_wallets_to_json_file(self,input_filename,output_filename='wallet_from_csv.json',ref_date=time.time()):
     df = pd.read_csv(input_filename)

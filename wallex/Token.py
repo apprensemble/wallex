@@ -101,11 +101,11 @@ class Token:
         else:
             self.ref_native_balance = None 
         if 'ref_date_comparaison' in entry and entry['ref_date_comparaison']:
-            self.ref_date_comparaison = entry['ref_date_comparaison']
+            self.ref_date_comparaison = float(entry['ref_date_comparaison'])
         else:
             self.ref_date_comparaison = None
-        if 'last_update' in entry:
-            self.last_update = entry['last_update']
+        if 'last_update' in entry and entry['last_update']:
+            self.last_update = float(entry['last_update'])
         else:
             self.last_update = None
 

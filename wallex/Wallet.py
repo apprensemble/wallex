@@ -115,7 +115,7 @@ class Tokens:
     def call_add_exchange_rate(self,token:Token,parsed_quotes,index:str):
         try: 
             split_index = index.split("_")
-            if len(split_index) == 2:
+            if len(split_index) >= 2:
                 erindex = split_index[-1]
                 token.add_exchange_rate(parsed_quotes[erindex]['exchange_rate'],parsed_quotes['last_update'])
             else:
