@@ -44,8 +44,8 @@ class WalletManager:
   def add_evm_wallet(self,account,name,refresh_quotes=False):
     parsed_quotes = self.parsed_quotes
 
-    mon_wallet: Wallet.Tokens = zerion.get_evm_wallet(account,refresh_quotes)
-    mon_wallet2: Wallet.Tokens = zerion.get_evm_complex_wallet(account,refresh_quotes)
+    mon_wallet: Wallet.Tokens = zerion.get_evm_wallet(account,self.refresh_sources)
+    mon_wallet2: Wallet.Tokens = zerion.get_evm_complex_wallet(account,self.refresh_sources)
     mon_wallet.name = name
     mon_wallet2.name = name
     if not mon_wallet.isInblockchain('Mantle'):
@@ -76,12 +76,13 @@ class WalletManager:
 #{token:{'id':obj['id'], 'name':obj['name'], 'contract_address':obj['contract_address'], 'native_balance':obj['native_balance'], 'usd_balance':obj['usd_balance'], 'blockchain':obj['blockchain'], 'type':obj['type'], 'exchange_rate':obj['exchange_rate'],'symbol':obj['symbol'] if obj['symbol'] not in a_changer.keys() else a_changer[obj['symbol']]}for token,obj in cwl_optimism.items()}
 #{token:{'id':obj['id'], 'name':obj['name'],'symbol':obj['symbol'] if obj['symbol'] not in a_changer.keys() else a_changer[obj['symbol']], 'contract_address':obj['contract_address'], 'native_balance':obj['native_balance'], 'usd_balance':obj['usd_balance'], 'blockchain':obj['blockchain'], 'type':obj['type'], 'exchange_rate':obj['exchange_rate']}for token,obj in blockchain_result.items()}
 
-  def fulfill_wallet_manager(self,refresh_quotes=False):
+  def fulfill_wallet_manager(self,refresh_quotes=False,refresh_sources=False):
     c = self.config
     last_update = None 
     if refresh_quotes:
       self.call_refresh_quotes()
       last_update = time.time() 
+    self.refresh_sources = refresh_sources
     self.create_custom_tags_and_manual_wallets(last_update)
     for wallet in c.svm_wallets:
       self.add_svm_wallet(c.svm_wallets[wallet],wallet,refresh_quotes)
@@ -655,10 +656,10 @@ class WalletManager:
         else:
           tags[tag] = token
 
-    tag_file = { title:{"nom": title, "kind":"strategie", "description":"blabla",
+    tag_data = { title:{"nom": title, "kind":"strategie", "description":"blabla",
                     "tokens":list(set(tokens))} for (title,tokens) in tags.items()}
 
-    self.config.save_to_file(auto_tags_file,tag_file)
+    self.config.save_to_file(auto_tags_file,tag_data)
 
     manual_wallet_file = {}
     for tags_,wallet,blockchain,token,native_balance,usd_balance,exchange_rate in resultat:
