@@ -11,6 +11,7 @@ class WalletManager:
     self.config = Config.Config()
     self.wallex_data_dir = self.config.wallex_common_data_dir
     self.config_dir = self.config.wallex_config_dir
+    self.refresh_sources = False
     if mode_test:
       #mt pour mode test
       self.wallex_data_dir = self.config.wallex_common_data_dir_test
@@ -36,7 +37,7 @@ class WalletManager:
     except:
       self.ref_wallets = {}
     #patch: il faut que j'externalise les truc perso
-    self.all_my_personnal_wallets = ['binance_sol', 'bybit_sol', 'cwsol', 'coinbasewallet', 'manual_telegram', 'manual_bitget', 'manual_cwdca','manual_egld', 'custom_cwl', 'custom_phantom_sol','custom_binance_evm', 'custom_bybit_evm', 'manual_argentx','manual_subwallet']
+    self.all_my_personnal_wallets = ['binance_sol', 'cwsafe', 'metamask', 'bybit_sol', 'cwsol', 'coinbasewallet', 'manual_telegram', 'manual_bitget', 'manual_cwdca','manual_egld', 'custom_cwl', 'custom_phantom_sol','custom_binance_evm', 'custom_bybit_evm', 'manual_argentx','manual_subwallet']
 
   def call_refresh_quotes(self):
     self.parsed_quotes = self.config.cmc.get_parsed_quotes(True)
